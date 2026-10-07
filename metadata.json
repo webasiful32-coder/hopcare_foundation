@@ -1,0 +1,7 @@
+{
+  "name": "HopeCare Foundation",
+  "description": "Comprehensive charity, emergency blood donation, and volunteer management platform for Bangladesh and beyond.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
