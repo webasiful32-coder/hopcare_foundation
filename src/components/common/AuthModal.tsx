@@ -34,7 +34,7 @@ export const AuthModal: React.FC = () => {
 
   const currentDistricts = BANGLADESH_DIVISIONS[division] || ['Dhaka'];
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
+ const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -45,8 +45,30 @@ export const AuthModal: React.FC = () => {
       closeAuthModal();
       setCurrentPage('home');
     } catch (err: any) {
-      // [object Object] এর বদলে আসল মেসেজ শো করবে
-      const errorMsg = getErrorMessage(err, 'ইমেইল বা পাসওয়ার্ড সঠিক নয়');
+      console.error('Login Error Raw:', err);
+
+      // আসল এরর মেসেজটি বের করার ১০০% নির্ভুল নিয়ম
+      let errorMsg = 'লগইন ব্যর্থ হয়েছে';
+
+      if (typeof err === 'string') {
+        errorMsg = err;
+      } else if (err?.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      } else if (err?.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err?.error) {
+        errorMsg = err.error;
+      } else if (err?.message && err.message !== '[object Object]') {
+        errorMsg = err.message;
+      } else {
+        // অবজেক্ট হলে সরাসরি পুরো JSON টেক্সট হিসেবে দেখাবে, [object Object] কখনোই হবে না
+        try {
+          errorMsg = JSON.stringify(err?.response?.data || err);
+        } catch {
+          errorMsg = 'ইমেইল বা পাসওয়ার্ড সঠিক নয়';
+        }
+      }
+
       addToast(errorMsg, 'error');
     } finally {
       setIsSubmitting(false);
