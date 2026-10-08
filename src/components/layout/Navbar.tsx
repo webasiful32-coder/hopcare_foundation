@@ -40,7 +40,7 @@ export const Navbar: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Admin check
+  // Admin check: accepts ADMIN, admin, Admin, or values containing ADMIN.
   const isAdmin = String(user?.role ?? '')
     .trim()
     .toUpperCase()
@@ -74,94 +74,55 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header
-      className="
-        sticky
-        top-0
-        z-[100]
-        w-full
-        max-w-full
-        min-w-0
-        bg-white
-        border-b
-        border-slate-200
-        shadow-[0_4px_20px_rgba(15,23,42,0.07)]
-      "
-    >
+    <header className="sticky top-0 z-[100] w-full max-w-full overflow-x-hidden bg-white border-b border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.07)]">
+
       {/* =====================================================
           EMERGENCY TOP BAR
       ====================================================== */}
 
-      <div
-        className="
-          w-full
-          max-w-full
-          overflow-hidden
-          bg-[#991B45]
-          bg-gradient-to-r
-          from-[#991B45]
-          via-[#B0184B]
-          to-[#8F123C]
-          text-white
-        "
-      >
-        <div
-          className="
-            w-full
-            max-w-[1440px]
-            mx-auto
-            px-3
-            sm:px-5
-            lg:px-8
-            min-w-0
-          "
-        >
-          <div
-            className="
-              min-h-[38px]
-              flex
-              items-center
-              justify-between
-              gap-2
-              sm:gap-3
-              min-w-0
-            "
-          >
+      <div className="w-full max-w-full bg-[#991B45] bg-gradient-to-r from-[#991B45] via-[#B0184B] to-[#8F123C] text-white">
+
+        <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-5 lg:px-8">
+
+          <div className="min-h-[38px] flex items-center justify-between gap-3 min-w-0">
+
             {/* LEFT */}
-            <div className="flex items-center min-w-0 gap-2 overflow-hidden">
+
+            <div className="flex items-center min-w-0 gap-2">
+
               <span className="relative flex h-2.5 w-2.5 shrink-0">
+
                 <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-60 animate-ping" />
+
                 <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+
               </span>
 
               <span className="hidden sm:inline text-[11px] sm:text-xs font-semibold whitespace-nowrap">
+
                 24/7 Bangladesh Emergency Blood Hotline:
+
               </span>
 
               <a
                 href="tel:+8801934201151"
-                className="
-                  flex
-                  items-center
-                  gap-1
-                  text-[12px]
-                  sm:text-xs
-                  font-extrabold
-                  text-white
-                  whitespace-nowrap
-                  hover:text-rose-100
-                  transition
-                  shrink-0
-                "
+                className="flex items-center gap-1 text-[12px] sm:text-xs font-extrabold text-white whitespace-nowrap hover:text-rose-100 transition shrink-0"
               >
+
                 <PhoneCall className="w-3.5 h-3.5 shrink-0" />
+
                 <span>+8801934201151</span>
+
               </a>
+
             </div>
 
             {/* RIGHT */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+
+            <div className="flex items-center gap-2 shrink-0">
+
               {/* Request Blood */}
+
               <button
                 onClick={() => openBloodRequestModal()}
                 className="
@@ -184,19 +145,22 @@ export const Navbar: React.FC = () => {
                   shrink-0
                 "
               >
+
                 <Droplet className="w-3.5 h-3.5 shrink-0" />
+
                 Request Blood Immediately
+
               </button>
 
               {/* Language */}
+
               <button
                 onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
                 className="
                   flex
                   items-center
                   gap-1.5
-                  px-2.5
-                  sm:px-3
+                  px-3
                   py-1.5
                   rounded-full
                   text-[11px]
@@ -212,43 +176,35 @@ export const Navbar: React.FC = () => {
                   shrink-0
                 "
               >
+
                 <Globe className="w-3.5 h-3.5 shrink-0" />
 
                 <span>{lang === 'en' ? 'বাংলা' : 'English'}</span>
+
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
 
       {/* =====================================================
           MAIN NAVBAR
       ====================================================== */}
 
-      <div className="w-full max-w-full min-w-0 overflow-visible">
-        <div
-          className="
-            w-full
-            max-w-[1440px]
-            mx-auto
-            px-3
-            sm:px-5
-            lg:px-8
-            min-w-0
-          "
-        >
-          <div
-            className="
-              min-h-[78px]
-              lg:min-h-[82px]
-              flex
-              items-center
-              gap-2
-              sm:gap-3
-              2xl:gap-4
-              min-w-0
-            "
-          >
+      <div className="w-full max-w-full">
+
+        <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-5 lg:px-8">
+
+          {/* IMPORTANT:
+              min-w-0 prevents flex children from forcing overflow.
+          */}
+
+          <div className="min-h-[78px] lg:min-h-[82px] flex items-center gap-3 xl:gap-4 min-w-0">
+
             {/* =================================================
                 LOGO + BRAND
             ================================================== */}
@@ -260,14 +216,17 @@ export const Navbar: React.FC = () => {
                 items-center
                 gap-2.5
                 shrink-0
+                min-w-0
                 cursor-pointer
                 text-left
                 group
-                min-w-0
               "
             >
+
               {/* Logo */}
+
               <div className="relative shrink-0">
+
                 <div
                   className="
                     w-11
@@ -288,10 +247,12 @@ export const Navbar: React.FC = () => {
                     transition-transform
                   "
                 >
+
                   <Heart
                     className="w-6 h-6 sm:w-7 sm:h-7 text-white fill-white"
                     strokeWidth={2}
                   />
+
                 </div>
 
                 <span
@@ -309,13 +270,26 @@ export const Navbar: React.FC = () => {
                     shadow
                   "
                 >
+
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+
                 </span>
+
               </div>
 
-              {/* Brand Text
-                  Hidden on very small screens to prevent overflow */}
-              <div className="hidden sm:block min-w-0">
+              {/* Brand Text */}
+
+              <div
+                className="
+                  hidden
+                  sm:block
+                  min-w-0
+                  max-w-[190px]
+                  lg:max-w-[230px]
+                  2xl:max-w-none
+                "
+              >
+
                 <div
                   className="
                     text-[16px]
@@ -326,9 +300,13 @@ export const Navbar: React.FC = () => {
                     text-slate-900
                     leading-tight
                     whitespace-nowrap
+                    overflow-hidden
+                    text-ellipsis
                   "
                 >
+
                   Shohayota Foundation
+
                 </div>
 
                 <div
@@ -341,35 +319,38 @@ export const Navbar: React.FC = () => {
                     mt-1
                     leading-tight
                     whitespace-nowrap
+                    overflow-hidden
+                    text-ellipsis
                   "
                   style={{
                     fontFamily:
                       "'Noto Sans Bengali', 'Hind Siliguri', sans-serif",
                   }}
                 >
+
                   মানুষের পাশে, মানবতার পথে
+
                 </div>
+
               </div>
+
             </button>
 
             {/* =================================================
                 DESKTOP NAVIGATION
-                1536px+ only
+
+                1536px+ = Desktop navigation
+                Below 1536px = Hamburger menu
+
+                This prevents 1280-1535px laptop overflow.
             ================================================== */}
 
-            <nav
-              className="
-                hidden
-                2xl:flex
-                flex-1
-                items-center
-                justify-center
-                min-w-0
-                overflow-hidden
-              "
-            >
+            <nav className="hidden 2xl:flex flex-1 items-center justify-center min-w-0 overflow-hidden">
+
               <div className="flex items-center gap-0 2xl:gap-1 min-w-0">
+
                 {navLinks.map((link) => {
+
                   const isActive = currentPage === link.id;
 
                   return (
@@ -399,6 +380,7 @@ export const Navbar: React.FC = () => {
                         }
                       `}
                     >
+
                       {link.label}
 
                       {isActive && (
@@ -418,37 +400,35 @@ export const Navbar: React.FC = () => {
                           "
                         />
                       )}
+
                     </button>
                   );
+
                 })}
+
               </div>
+
             </nav>
 
             {/* =================================================
                 RIGHT SIDE
             ================================================== */}
 
-            <div
-              className="
-                flex
-                items-center
-                gap-1
-                sm:gap-1.5
-                lg:gap-2
-                shrink-0
-                ml-auto
-                min-w-0
-              "
-            >
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto min-w-0">
+
               {/* Notification */}
+
               <div className="relative shrink-0">
+
                 <button
                   onClick={() => {
+
                     setIsNotifOpen(!isNotifOpen);
 
                     if (!isNotifOpen && unreadNotifsCount > 0) {
                       markNotificationsAsRead();
                     }
+
                   }}
                   className="
                     relative
@@ -462,10 +442,10 @@ export const Navbar: React.FC = () => {
                     hover:text-teal-700
                     hover:bg-teal-50
                     transition
-                    shrink-0
                   "
                   aria-label="Notifications"
                 >
+
                   <Bell className="w-5 h-5" />
 
                   {unreadNotifsCount > 0 && (
@@ -492,11 +472,15 @@ export const Navbar: React.FC = () => {
                       {unreadNotifsCount > 9 ? '9+' : unreadNotifsCount}
                     </span>
                   )}
+
                 </button>
 
                 {/* Notification Dropdown */}
+
                 <AnimatePresence>
+
                   {isNotifOpen && (
+
                     <motion.div
                       initial={{ opacity: 0, y: 8, scale: 0.97 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -518,6 +502,7 @@ export const Navbar: React.FC = () => {
                         z-[200]
                       "
                     >
+
                       <div
                         className="
                           px-4
@@ -532,7 +517,9 @@ export const Navbar: React.FC = () => {
                           min-w-0
                         "
                       >
+
                         <div className="min-w-0">
+
                           <h3 className="text-sm font-extrabold text-slate-900">
                             Notifications
                           </h3>
@@ -540,6 +527,7 @@ export const Navbar: React.FC = () => {
                           <p className="text-[10px] text-slate-500 mt-0.5">
                             Stay updated with HopeCare
                           </p>
+
                         </div>
 
                         <button
@@ -555,19 +543,27 @@ export const Navbar: React.FC = () => {
                         >
                           Mark all read
                         </button>
+
                       </div>
 
                       <div className="max-h-[320px] overflow-y-auto">
+
                         {notifications.length === 0 ? (
+
                           <div className="py-10 text-center">
+
                             <Bell className="w-6 h-6 mx-auto text-slate-300 mb-2" />
 
                             <p className="text-xs font-semibold text-slate-500">
                               No notifications yet
                             </p>
+
                           </div>
+
                         ) : (
+
                           notifications.map((n) => (
+
                             <div
                               key={n.id}
                               className="
@@ -579,6 +575,7 @@ export const Navbar: React.FC = () => {
                                 min-w-0
                               "
                             >
+
                               <p className="text-xs font-bold text-slate-900 break-words">
                                 {n.title}
                               </p>
@@ -590,21 +587,31 @@ export const Navbar: React.FC = () => {
                               <span className="text-[9px] text-slate-400 mt-1 block">
                                 {new Date(n.createdAt).toLocaleDateString()}
                               </span>
+
                             </div>
+
                           ))
+
                         )}
+
                       </div>
+
                     </motion.div>
+
                   )}
+
                 </AnimatePresence>
+
               </div>
 
               {/* =================================================
                   DIRECT ADMIN PANEL BUTTON
-                  1536px+ only
+
+                  Only desktop 1536px+
               ================================================== */}
 
               {isAdmin && (
+
                 <button
                   onClick={() => handleNavClick('admin')}
                   className="
@@ -627,13 +634,18 @@ export const Navbar: React.FC = () => {
                     shadow-purple-600/20
                     transition
                     cursor-pointer
+                    whitespace-nowrap
                     shrink-0
                   "
                   title="Admin Dashboard"
                 >
+
                   <ShieldAlert className="w-4 h-4 shrink-0" />
+
                   <span>Admin Panel</span>
+
                 </button>
+
               )}
 
               {/* =================================================
@@ -641,17 +653,17 @@ export const Navbar: React.FC = () => {
               ================================================== */}
 
               {user ? (
+
                 <div className="relative shrink-0">
+
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="
                       flex
                       items-center
-                      gap-1.5
-                      sm:gap-2
+                      gap-2
                       h-10
-                      px-1.5
-                      sm:px-2
+                      px-2
                       rounded-xl
                       border
                       border-slate-200
@@ -662,6 +674,7 @@ export const Navbar: React.FC = () => {
                       shrink-0
                     "
                   >
+
                     <div
                       className="
                         w-7
@@ -680,32 +693,43 @@ export const Navbar: React.FC = () => {
                         shrink-0
                       "
                     >
+
                       {user.avatarUrl ? (
+
                         <img
                           src={user.avatarUrl}
                           alt={user.fullName}
                           className="w-full h-full object-cover"
                         />
+
                       ) : (
+
                         user.fullName.charAt(0).toUpperCase()
+
                       )}
+
                     </div>
 
-                    <div className="hidden 2xl:block text-left min-w-0">
-                      <span className="text-[11px] font-bold text-slate-900 block truncate max-w-[90px]">
+                    <div className="hidden 2xl:block text-left min-w-0 max-w-[90px]">
+
+                      <span className="text-[11px] font-bold text-slate-900 block truncate">
                         {user.fullName.split(' ')[0]}
                       </span>
 
-                      <span className="text-[9px] text-slate-500 uppercase font-bold">
+                      <span className="text-[9px] text-slate-500 uppercase font-bold truncate block">
                         {user.role}
                       </span>
+
                     </div>
 
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+
                   </button>
 
                   <AnimatePresence>
+
                     {isUserMenuOpen && (
+
                       <motion.div
                         initial={{ opacity: 0, y: 8, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -726,7 +750,9 @@ export const Navbar: React.FC = () => {
                           z-[200]
                         "
                       >
+
                         <div className="p-3 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 mb-1 min-w-0">
+
                           <p className="text-sm font-extrabold text-slate-900 truncate">
                             {user.fullName}
                           </p>
@@ -734,6 +760,7 @@ export const Navbar: React.FC = () => {
                           <p className="text-[10px] text-slate-500 mt-0.5 truncate">
                             {user.email}
                           </p>
+
                         </div>
 
                         <button
@@ -749,18 +776,24 @@ export const Navbar: React.FC = () => {
                             text-left
                             hover:bg-teal-50
                             transition
+                            min-w-0
                           "
                         >
+
                           <span className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
+
                             <LayoutDashboard className="w-4 h-4 text-teal-600" />
+
                           </span>
 
-                          <span className="text-xs font-bold text-slate-700">
+                          <span className="text-xs font-bold text-slate-700 truncate">
                             User Dashboard
                           </span>
+
                         </button>
 
                         {isAdmin && (
+
                           <button
                             onClick={() => handleNavClick('admin')}
                             className="
@@ -774,19 +807,26 @@ export const Navbar: React.FC = () => {
                               text-left
                               hover:bg-purple-50
                               transition
+                              min-w-0
                             "
                           >
+
                             <span className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+
                               <ShieldAlert className="w-4 h-4 text-purple-600" />
+
                             </span>
 
-                            <span className="text-xs font-bold text-purple-700">
+                            <span className="text-xs font-bold text-purple-700 truncate">
                               Admin Dashboard
                             </span>
+
                           </button>
+
                         )}
 
                         <div className="border-t border-slate-100 mt-1 pt-1">
+
                           <button
                             onClick={() => {
                               logout();
@@ -806,19 +846,29 @@ export const Navbar: React.FC = () => {
                               transition
                             "
                           >
+
                             <LogOut className="w-4 h-4 shrink-0" />
 
                             <span className="text-xs font-bold">
                               Sign Out
                             </span>
+
                           </button>
+
                         </div>
+
                       </motion.div>
+
                     )}
+
                   </AnimatePresence>
+
                 </div>
+
               ) : (
+
                 /* SIGN IN */
+
                 <button
                   onClick={() => handleNavClick('auth')}
                   className="
@@ -839,12 +889,17 @@ export const Navbar: React.FC = () => {
                     font-extrabold
                     transition
                     cursor-pointer
+                    whitespace-nowrap
                     shrink-0
                   "
                 >
+
                   <UserIcon className="w-4 h-4 shrink-0" />
+
                   <span>{t.signIn}</span>
+
                 </button>
+
               )}
 
               {/* =================================================
@@ -855,7 +910,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => openDonateModal()}
                 className="
                   h-10
-                  px-2.5
+                  px-3
                   sm:px-4
                   2xl:px-5
                   rounded-xl
@@ -881,16 +936,23 @@ export const Navbar: React.FC = () => {
                   shrink-0
                 "
               >
+
                 <Heart className="w-4 h-4 fill-white shrink-0" />
 
-                <span className="hidden sm:inline">{t.donateNow}</span>
+                <span className="hidden sm:inline">
+                  {t.donateNow}
+                </span>
 
-                <span className="sm:hidden">Donate</span>
+                <span className="sm:hidden">
+                  Donate
+                </span>
+
               </button>
 
               {/* =================================================
                   HAMBURGER
-                  below 1536px
+
+                  Shown below 1536px
               ================================================== */}
 
               <button
@@ -915,23 +977,29 @@ export const Navbar: React.FC = () => {
                 "
                 aria-label="Toggle Navigation"
               >
+
                 {isMobileMenuOpen ? (
                   <X className="w-6 h-6" />
                 ) : (
                   <Menu className="w-6 h-6" />
                 )}
+
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
 
       {/* =====================================================
           MOBILE / TABLET MENU
-          below 1536px
       ====================================================== */}
 
       {isMobileMenuOpen && (
+
         <div
           className="
             2xl:hidden
@@ -943,15 +1011,16 @@ export const Navbar: React.FC = () => {
             shadow-[0_15px_35px_rgba(15,23,42,0.12)]
             relative
             z-[150]
-            overflow-hidden
+            overflow-x-hidden
           "
         >
+
           <div
             className="
               w-full
               max-w-[1440px]
               mx-auto
-              px-3
+              px-4
               sm:px-6
               py-4
               max-h-[calc(100vh-115px)]
@@ -960,7 +1029,9 @@ export const Navbar: React.FC = () => {
               min-w-0
             "
           >
+
             {/* Mobile Brand Header */}
+
             <div
               className="
                 flex
@@ -975,8 +1046,10 @@ export const Navbar: React.FC = () => {
                 border
                 border-teal-100
                 min-w-0
+                max-w-full
               "
             >
+
               <div
                 className="
                   w-11
@@ -991,10 +1064,13 @@ export const Navbar: React.FC = () => {
                   shrink-0
                 "
               >
+
                 <Heart className="w-6 h-6 text-white fill-white" />
+
               </div>
 
               <div className="min-w-0">
+
                 <p className="text-base font-extrabold text-slate-900 truncate">
                   Shohayota Foundation
                 </p>
@@ -1008,15 +1084,21 @@ export const Navbar: React.FC = () => {
                 >
                   মানুষের পাশে, মানবতার পথে
                 </p>
+
               </div>
+
             </div>
 
             {/* MOBILE NAV LINKS */}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
+
               {navLinks.map((link) => {
+
                 const isActive = currentPage === link.id;
 
                 return (
+
                   <button
                     key={link.id}
                     onClick={() => handleNavClick(link.id)}
@@ -1042,31 +1124,29 @@ export const Navbar: React.FC = () => {
                       }
                     `}
                   >
-                    <span className="truncate">{link.label}</span>
+
+                    <span className="truncate">
+                      {link.label}
+                    </span>
 
                     {isActive && (
                       <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
                     )}
+
                   </button>
+
                 );
+
               })}
+
             </div>
 
             {/* MOBILE ACTIONS */}
-            <div
-              className="
-                mt-4
-                pt-4
-                border-t
-                border-slate-200
-                grid
-                grid-cols-1
-                sm:grid-cols-2
-                gap-2
-                min-w-0
-              "
-            >
+
+            <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
+
               {!user ? (
+
                 <button
                   onClick={() => {
                     openAuthModal('login');
@@ -1091,11 +1171,17 @@ export const Navbar: React.FC = () => {
                     gap-2
                   "
                 >
+
                   <UserIcon className="w-4 h-4 shrink-0" />
 
-                  Sign In / Register
+                  <span className="truncate">
+                    Sign In / Register
+                  </span>
+
                 </button>
+
               ) : (
+
                 <button
                   onClick={() => {
                     handleNavClick('dashboard');
@@ -1113,14 +1199,18 @@ export const Navbar: React.FC = () => {
                     text-sm
                     font-extrabold
                     shadow-sm
+                    truncate
                   "
                 >
                   Go to User Dashboard
                 </button>
+
               )}
 
               {/* ADMIN */}
+
               {isAdmin && (
+
                 <button
                   onClick={() => {
                     handleNavClick('admin');
@@ -1144,13 +1234,19 @@ export const Navbar: React.FC = () => {
                     gap-2
                   "
                 >
+
                   <ShieldAlert className="w-5 h-5 shrink-0" />
 
-                  Admin Dashboard
+                  <span className="truncate">
+                    Admin Dashboard
+                  </span>
+
                 </button>
+
               )}
 
               {/* Request Blood */}
+
               <button
                 onClick={() => {
                   openBloodRequestModal();
@@ -1174,13 +1270,19 @@ export const Navbar: React.FC = () => {
                   shadow-sm
                 "
               >
+
                 <Droplet className="w-5 h-5 shrink-0" />
 
-                Request Blood
+                <span>
+                  Request Blood
+                </span>
+
               </button>
+
             </div>
 
             {/* Mobile Language */}
+
             <button
               onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
               className="
@@ -1201,13 +1303,21 @@ export const Navbar: React.FC = () => {
                 gap-2
               "
             >
+
               <Globe className="w-4 h-4 shrink-0" />
 
-              {lang === 'en' ? 'বাংলায় দেখুন' : 'View in English'}
+              <span>
+                {lang === 'en' ? 'বাংলায় দেখুন' : 'View in English'}
+              </span>
+
             </button>
+
           </div>
+
         </div>
+
       )}
+
     </header>
   );
 };

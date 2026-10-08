@@ -1,21 +1,28 @@
 @import "tailwindcss";
 
 /* =========================================================
-   GLOBAL RESPONSIVE / OVERFLOW SAFETY
+   GLOBAL BASE / RESPONSIVE SAFETY
    ========================================================= */
 
 @layer base {
   html {
-    scroll-behavior: smooth;
     width: 100%;
     max-width: 100%;
+    margin: 0;
+    padding: 0;
+
+    scroll-behavior: smooth;
     overflow-x: hidden;
+
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     width: 100%;
     max-width: 100%;
     min-width: 0;
+    min-height: 100vh;
+
     margin: 0;
     padding: 0;
 
@@ -32,16 +39,19 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
+    min-height: 100vh;
+
     overflow-x: hidden;
   }
 
+  /* Box sizing */
   *,
   *::before,
   *::after {
     box-sizing: border-box;
-    min-width: 0;
   }
 
+  /* Images / media */
   img,
   video,
   canvas,
@@ -49,10 +59,16 @@
     max-width: 100%;
   }
 
+  img,
+  video {
+    height: auto;
+  }
+
   img {
     display: block;
   }
 
+  /* Forms */
   button,
   input,
   textarea,
@@ -63,15 +79,28 @@
 
   button {
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
+  /* Links */
   a {
     max-width: 100%;
+  }
+
+  /* Long text protection */
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: anywhere;
   }
 }
 
 /* =========================================================
-   CONTAINER SAFETY
+   MAIN LAYOUT SAFETY
    ========================================================= */
 
 main,
@@ -79,12 +108,35 @@ section,
 article,
 header,
 footer,
-nav,
-div {
+nav {
   max-width: 100%;
+  min-width: 0;
 }
 
-/* Prevent long text / URLs from creating overflow */
+/* =========================================================
+   FLEX / GRID SAFETY
+   ========================================================= */
+
+/*
+  Important:
+  Flex/Grid children can sometimes force the parent wider.
+*/
+
+.flex > *,
+.grid > * {
+  min-width: 0;
+}
+
+/* Common flex/grid containers */
+.flex,
+.grid {
+  min-width: 0;
+}
+
+/* =========================================================
+   TEXT / URL OVERFLOW PROTECTION
+   ========================================================= */
+
 p,
 h1,
 h2,
@@ -97,14 +149,76 @@ a {
   overflow-wrap: anywhere;
 }
 
-/* But don't break important UI labels */
+/*
+  Buttons and navigation labels should normally keep
+  their natural text behavior.
+*/
 button,
 nav button {
   overflow-wrap: normal;
+  word-break: normal;
 }
 
 /* =========================================================
-   MOBILE
+   MEDIA SAFETY
+   ========================================================= */
+
+img,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* SVG should never create horizontal overflow */
+svg {
+  max-width: 100%;
+}
+
+/* =========================================================
+   TABLE SAFETY
+   ========================================================= */
+
+table {
+  max-width: 100%;
+}
+
+/*
+  If you have a wide table, wrap it with:
+  <div className="overflow-x-auto">
+*/
+.table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.overflow-x-auto {
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================================================
+   FORM SAFETY
+   ========================================================= */
+
+input,
+textarea,
+select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/*
+  Don't force width: 100% globally.
+  Existing form layouts may intentionally use
+  auto / fixed / grid widths.
+*/
+
+/* =========================================================
+   MOBILE SAFETY
    ========================================================= */
 
 @media (max-width: 639px) {
@@ -119,17 +233,21 @@ nav button {
   main {
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     overflow-x: hidden;
   }
 
-  section {
-    width: 100%;
+  section,
+  article,
+  header,
+  footer {
     max-width: 100%;
+    min-width: 0;
   }
 }
 
 /* =========================================================
-   TABLET
+   TABLET SAFETY
    ========================================================= */
 
 @media (min-width: 640px) and (max-width: 1023px) {
@@ -143,7 +261,7 @@ nav button {
 }
 
 /* =========================================================
-   LAPTOP
+   LAPTOP SAFETY
    ========================================================= */
 
 @media (min-width: 1024px) and (max-width: 1535px) {
@@ -157,7 +275,7 @@ nav button {
 }
 
 /* =========================================================
-   EXTRA LARGE SCREEN
+   LARGE DESKTOP
    ========================================================= */
 
 @media (min-width: 1536px) {
@@ -171,46 +289,7 @@ nav button {
 }
 
 /* =========================================================
-   SAFE FLEX / GRID BEHAVIOR
-   ========================================================= */
-
-.flex,
-.grid {
-  min-width: 0;
-}
-
-/* Prevent flex children from forcing parent wider */
-.flex > *,
-.grid > * {
-  min-width: 0;
-}
-
-/* =========================================================
-   TABLE RESPONSIVE SAFETY
-   ========================================================= */
-
-table {
-  max-width: 100%;
-}
-
-.table-wrapper,
-.overflow-x-auto {
-  max-width: 100%;
-}
-
-/* =========================================================
-   FORM SAFETY
-   ========================================================= */
-
-input,
-textarea,
-select {
-  width: 100%;
-  min-width: 0;
-}
-
-/* =========================================================
-   MOBILE TOUCH SAFETY
+   MOBILE TOUCH
    ========================================================= */
 
 @media (max-width: 640px) {

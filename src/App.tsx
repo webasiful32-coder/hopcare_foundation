@@ -34,13 +34,14 @@ const MainContent: React.FC = () => {
 
   if (showAuthPortal) {
     return (
-      <div className="min-h-screen bg-slate-50 font-sans">
+      <div className="min-h-screen w-full max-w-full min-w-0 overflow-x-hidden bg-slate-50 font-sans">
         <MotionAuthPage
           onBypassToSite={() => {
             setGuestBypassed(true);
             setCurrentPage('home');
           }}
         />
+
         <ToastContainer />
       </div>
     );
@@ -50,50 +51,67 @@ const MainContent: React.FC = () => {
     switch (currentPage) {
       case 'home':
         return <HomePage />;
+
       case 'campaigns':
         return <CampaignsPage />;
+
       case 'blood-donors':
         return <BloodDonorsPage />;
+
       case 'blood-requests':
         return <BloodRequestsPage />;
+
       case 'beneficiaries':
         return <BeneficiariesPage />;
+
       case 'gallery':
         return <GalleryPage />;
+
       case 'blog':
         return <BlogPage />;
+
       case 'about':
         return <AboutPage />;
+
       case 'contact':
         return <ContactPage />;
+
       case 'legal':
         return <LegalPage />;
+
       case 'dashboard':
         return <UserDashboard />;
+
       case 'admin':
         return <AdminDashboard />;
+
       default:
         return <HomePage />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50/50 via-white to-blue-50/30 text-slate-800 font-sans selection:bg-sky-500 selection:text-white">
+    <div className="min-h-screen w-full max-w-full min-w-0 flex flex-col overflow-x-hidden bg-gradient-to-b from-sky-50/50 via-white to-blue-50/30 text-slate-800 font-sans selection:bg-sky-500 selection:text-white">
       <Navbar />
-      <main className="flex-1 w-full min-w-0 overflow-x-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentPage}
-              className="w-full min-w-0 max-w-full"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.28, ease: 'easeInOut' }}
-            >
-              {renderPage()}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+
+      <main className="flex-1 w-full max-w-full min-w-0 overflow-x-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            className="w-full max-w-full min-w-0 overflow-x-hidden"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{
+              duration: 0.28,
+              ease: 'easeInOut',
+            }}
+          >
+            {renderPage()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
       <Footer />
 
       {/* Global Interactive Overlays */}
