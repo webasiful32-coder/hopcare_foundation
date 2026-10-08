@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
-import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS, BLOOD_GROUPS } from '../../data/bangladeshData';
+import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS, BLOOD_GROUPS, DIVISION_NAMES_BN, DISTRICT_NAMES_BN } from '../../data/bangladeshData';
+import { loginUser, registerUser, safeFetchJson } from '../../services/apiClient';
 
 interface MotionAuthPageProps {
   onBypassToSite?: () => void;
@@ -46,10 +47,26 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
   const [dbStatus, setDbStatus] = useState<{ isConnected: boolean; provider: string; message: string } | null>(null);
 
   useEffect(() => {
-    fetch('/api/health/db-status')
-      .then((res) => res.json())
-      .then((data) => setDbStatus(data))
-      .catch(() => {});
+    safeFetchJson<{ isConnected: boolean; provider: string; message: string }>('/api/health/db-status')
+      .then((res) => {
+        if (res.ok && res.data) {
+          setDbStatus(res.data);
+        } else {
+          // Client / Netlify mode
+          setDbStatus({
+            isConnected: true,
+            provider: 'Client-Side Database (Netlify Ready)',
+            message: 'Active & Responsive'
+          });
+        }
+      })
+      .catch(() => {
+        setDbStatus({
+          isConnected: true,
+          provider: 'Client-Side Database (Netlify Ready)',
+          message: 'Active & Responsive'
+        });
+      });
   }, []);
 
   const handleDivisionChange = (div: string) => {
@@ -72,20 +89,9 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
 
     try {
       if (mode === 'login') {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), password })
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। দয়া করে আবার চেষ্টা করুন।');
-        }
-
-        login(data.token, data.user);
-        addToast(`স্বাগতম, ${data.user.fullName}!`, 'success');
-
+        const authData = await loginUser(email, password);
+        login(authData.token, authData.user);
+        addToast(`স্বাগতম, ${authData.user.fullName}!`, 'success');
         // Redirect to Home Page on login
         setCurrentPage('home');
       } else {
@@ -94,56 +100,25 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
           throw new Error('দয়া করে সব প্রয়োজনীয় ঘর পূরণ করুন');
         }
 
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fullName: fullName.trim(),
-            email: email.trim(),
-            phone: phone.trim(),
-            password,
-            division,
-            district,
-            upazila
-          })
+        const authData = await registerUser({
+          fullName: fullName.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          password,
+          division,
+          district,
+          upazila,
+          isBloodDonor,
+          bloodGroup
         });
 
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'রেজিস্ট্রেশন সম্পন্ন করা যায়নি। পুনরায় চেষ্টা করুন।');
-        }
-
-        // If user also wants to be a blood donor, register donor profile
-        if (isBloodDonor && data.token) {
-          try {
-            await fetch('/api/blood-donors', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${data.token}`
-              },
-              body: JSON.stringify({
-                fullName: fullName.trim(),
-                bloodGroup,
-                phone: phone.trim(),
-                email: email.trim(),
-                division,
-                district,
-                upazila,
-                userId: data.user.id
-              })
-            });
-          } catch {}
-        }
-
-        login(data.token, data.user);
-        addToast(`রেজিস্ট্রেশন সফলভাবে সম্পন্ন হয়েছে! স্বাগতম, ${data.user.fullName}।`, 'success');
-
+        login(authData.token, authData.user);
+        addToast(`রেজিস্ট্রেশন সফলভাবে সম্পন্ন হয়েছে! স্বাগতম, ${authData.user.fullName}।`, 'success');
         // Redirect to Home Page on registration
         setCurrentPage('home');
       }
     } catch (err: any) {
-      addToast(err.message, 'error');
+      addToast(err.message || 'অনাকাঙ্ক্ষিত ত্রুটি ঘটেছে। পুনরায় চেষ্টা করুন।', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -201,7 +176,7 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
 
             <div className="space-y-0.5">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Shohayota <span className="text-blue-600"> Foundation </span>
+                Shohayota  <span className="text-blue-600"> Foundation </span>
               </h1>
               <p className="text-xs font-semibold text-slate-600">
                 মানবিক সহায়তা ও জরুরি রক্তদান প্ল্যাটফর্ম • Bangladesh Gateway
@@ -433,7 +408,7 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
                     >
                       {Object.keys(BANGLADESH_DIVISIONS).map((div) => (
                         <option key={div} value={div}>
-                          {div}
+                          {DIVISION_NAMES_BN[div] ? `${DIVISION_NAMES_BN[div]} (${div})` : div}
                         </option>
                       ))}
                     </select>
@@ -448,21 +423,25 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
                     >
                       {(BANGLADESH_DIVISIONS[division] || []).map((dst) => (
                         <option key={dst} value={dst}>
-                          {dst}
+                          {DISTRICT_NAMES_BN[dst] ? `${DISTRICT_NAMES_BN[dst]} (${dst})` : dst}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-extrabold text-slate-900 mb-1">উপজেলা</label>
-                    <input
-                      type="text"
-                      placeholder="উপজেলা/এলাকা"
+                    <label className="block text-xs font-extrabold text-slate-900 mb-1">উপজেলা *</label>
+                    <select
                       value={upazila}
                       onChange={(e) => setUpazila(e.target.value)}
                       className="w-full px-2 py-1.5 bg-slate-50/80 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      {(DISTRICT_UPAZILAS[district] || ['Sadar']).map((upz) => (
+                        <option key={upz} value={upz}>
+                          {upz}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 

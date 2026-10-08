@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { BloodGroup, EmergencyLevel } from '../../types';
-import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS, BLOOD_GROUPS } from '../../data/bangladeshData';
+import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS, BLOOD_GROUPS, DIVISION_NAMES_BN, DISTRICT_NAMES_BN } from '../../data/bangladeshData';
+import { createBloodRequest } from '../../services/apiClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Droplet, AlertTriangle, CheckCircle, Loader2, Users } from 'lucide-react';
 
@@ -42,34 +43,24 @@ export const BloodRequestModal: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/blood-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientName,
-          bloodGroup,
-          requiredUnits,
-          hospitalName,
-          hospitalAddress,
-          division,
-          district,
-          upazila,
-          requiredDate,
-          requiredTime,
-          emergencyLevel,
-          contactPerson,
-          contactPhone,
-          patientCondition,
-          additionalInfo,
-          userId: user?.id
-        })
+      const data = await createBloodRequest({
+        patientName,
+        bloodGroup,
+        requiredUnits,
+        hospitalName,
+        hospitalAddress,
+        division,
+        district,
+        upazila,
+        requiredDate,
+        requiredTime,
+        emergencyLevel,
+        contactPerson,
+        contactPhone,
+        patientCondition,
+        additionalInfo,
+        userId: user?.id
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit request');
-      }
 
       setMatchedPreview(data.matchedDonors || []);
       addToast(`Emergency Request Created! ${data.matchedDonors?.length || 0} donors matched nearby.`, 'success');
@@ -314,7 +305,7 @@ export const BloodRequestModal: React.FC = () => {
                 >
                   {Object.keys(BANGLADESH_DIVISIONS).map((div) => (
                     <option key={div} value={div}>
-                      {div}
+                      {DIVISION_NAMES_BN[div] ? `${DIVISION_NAMES_BN[div]} (${div})` : div}
                     </option>
                   ))}
                 </select>
@@ -333,7 +324,7 @@ export const BloodRequestModal: React.FC = () => {
                 >
                   {currentDistricts.map((d) => (
                     <option key={d} value={d}>
-                      {d}
+                      {DISTRICT_NAMES_BN[d] ? `${DISTRICT_NAMES_BN[d]} (${d})` : d}
                     </option>
                   ))}
                 </select>

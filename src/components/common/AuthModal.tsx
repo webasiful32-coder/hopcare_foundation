@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS } from '../../data/bangladeshData';
+import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS, DIVISION_NAMES_BN, DISTRICT_NAMES_BN } from '../../data/bangladeshData';
+import { loginUser, registerUser } from '../../services/apiClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Lock, Mail, User as UserIcon, Phone, ArrowRight, Loader2, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
@@ -26,19 +27,9 @@ export const AuthModal: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'লগইন ব্যর্থ হয়েছে। সঠিক ইমেইল ও পাসওয়ার্ড দিন।');
-      }
-
-      login(data.token, data.user);
-      addToast(`স্বাগতম, ${data.user.fullName}!`, 'success');
+      const authData = await loginUser(email, password);
+      login(authData.token, authData.user);
+      addToast(`স্বাগতম, ${authData.user.fullName}!`, 'success');
       closeAuthModal();
       setCurrentPage('home');
     } catch (err: any) {
@@ -53,27 +44,18 @@ export const AuthModal: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          password,
-          division,
-          district,
-          upazila
-        })
+      const authData = await registerUser({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        password,
+        division,
+        district,
+        upazila
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'নিবন্ধন সম্পন্ন করা যায়নি।');
-      }
-
-      login(data.token, data.user);
-      addToast(`নিবন্ধন সফলভাবে সম্পন্ন হয়েছে! স্বাগতম, ${data.user.fullName}।`, 'success');
+      login(authData.token, authData.user);
+      addToast(`নিবন্ধন সফলভাবে সম্পন্ন হয়েছে! স্বাগতম, ${authData.user.fullName}।`, 'success');
       closeAuthModal();
       setCurrentPage('home');
     } catch (err: any) {
@@ -109,7 +91,7 @@ export const AuthModal: React.FC = () => {
                       : 'পাসওয়ার্ড পুনরুদ্ধার'}
                   </h3>
                   <p className="text-xs text-blue-100 font-medium">
-                    HopeCare Foundation • ড্যাশবোর্ড এক্সেস
+                    Shohayota Foundation • ড্যাশবোর্ড এক্সেস
                   </p>
                 </div>
               </div>
@@ -256,7 +238,7 @@ export const AuthModal: React.FC = () => {
                 {/* Location Grid */}
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">বিভাগ</label>
+                    <label className="block text-xs font-bold text-slate-900 mb-1">বিভাগ *</label>
                     <select
                       value={division}
                       onChange={(e) => {
@@ -270,14 +252,14 @@ export const AuthModal: React.FC = () => {
                     >
                       {Object.keys(BANGLADESH_DIVISIONS).map((div) => (
                         <option key={div} value={div}>
-                          {div}
+                          {DIVISION_NAMES_BN[div] ? `${DIVISION_NAMES_BN[div]} (${div})` : div}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">জেলা</label>
+                    <label className="block text-xs font-bold text-slate-900 mb-1">জেলা *</label>
                     <select
                       value={district}
                       onChange={(e) => {
@@ -289,21 +271,25 @@ export const AuthModal: React.FC = () => {
                     >
                       {currentDistricts.map((d) => (
                         <option key={d} value={d}>
-                          {d}
+                          {DISTRICT_NAMES_BN[d] ? `${DISTRICT_NAMES_BN[d]} (${d})` : d}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">উপজেলা</label>
-                    <input
-                      type="text"
+                    <label className="block text-xs font-bold text-slate-900 mb-1">উপজেলা *</label>
+                    <select
                       value={upazila}
                       onChange={(e) => setUpazila(e.target.value)}
-                      placeholder="উপজেলা"
-                      className="w-full px-2 py-2 text-xs font-semibold text-slate-900 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
-                    />
+                      className="w-full px-2 py-2 text-xs font-semibold text-slate-900 border-2 border-slate-300 rounded-xl bg-white focus:border-blue-600 focus:outline-hidden"
+                    >
+                      {(DISTRICT_UPAZILAS[district] || ['Sadar']).map((upz) => (
+                        <option key={upz} value={upz}>
+                          {upz}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 

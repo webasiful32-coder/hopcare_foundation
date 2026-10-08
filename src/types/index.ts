@@ -45,6 +45,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   isBloodDonor?: boolean;
+  bloodGroup?: BloodGroup;
 }
 
 export interface Campaign {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { BloodDonor, BloodGroup } from '../../types';
-import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS, BLOOD_GROUPS } from '../../data/bangladeshData';
+import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS, BLOOD_GROUPS, DIVISION_NAMES_BN, DISTRICT_NAMES_BN, INITIAL_BLOOD_DONORS } from '../../data/bangladeshData';
+import { registerBloodDonor, safeFetchJson } from '../../services/apiClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { Droplet, Search, MapPin, CheckCircle, Clock, ShieldCheck, Heart, UserPlus, PhoneCall, AlertCircle } from 'lucide-react';
 
@@ -37,10 +38,29 @@ export const BloodDonorsPage: React.FC = () => {
     if (district !== 'All') params.append('district', district);
     if (availableOnly) params.append('availableOnly', 'true');
 
-    fetch(`/api/blood-donors?${params.toString()}`)
-      .then((r) => r.json())
-      .then((data) => setDonors(data))
-      .catch(() => {});
+    safeFetchJson<BloodDonor[]>(`/api/blood-donors?${params.toString()}`)
+      .then((res) => {
+        if (res.ok && Array.isArray(res.data)) {
+          setDonors(res.data);
+        } else {
+          // Fallback to initial donors + localStorage donors
+          try {
+            const localRaw = localStorage.getItem('hopecare_blood_donors_local');
+            const localDonors = localRaw ? JSON.parse(localRaw) : [];
+            let combined = [...localDonors, ...INITIAL_BLOOD_DONORS];
+            if (selectedGroup !== 'All') combined = combined.filter(d => d.bloodGroup === selectedGroup);
+            if (division !== 'All') combined = combined.filter(d => d.division === division);
+            if (district !== 'All') combined = combined.filter(d => d.district === district);
+            if (availableOnly) combined = combined.filter(d => d.status === 'AVAILABLE' || d.isAvailable);
+            setDonors(combined);
+          } catch {
+            setDonors(INITIAL_BLOOD_DONORS);
+          }
+        }
+      })
+      .catch(() => {
+        setDonors(INITIAL_BLOOD_DONORS);
+      });
   };
 
   const handleRegisterDonor = async (e: React.FormEvent) => {
@@ -51,22 +71,16 @@ export const BloodDonorsPage: React.FC = () => {
     }
 
     try {
-      const res = await fetch('/api/blood-donors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: regName,
-          bloodGroup: regBlood,
-          phone: regPhone,
-          division: regDivision,
-          district: regDistrict,
-          upazila: regUpazila,
-          gender: 'Male',
-          userId: user?.id
-        })
+      await registerBloodDonor({
+        fullName: regName,
+        bloodGroup: regBlood,
+        phone: regPhone,
+        division: regDivision,
+        district: regDistrict,
+        upazila: regUpazila,
+        gender: 'Male',
+        userId: user?.id
       });
-
-      if (!res.ok) throw new Error('Failed to register');
 
       addToast('You have been successfully registered as a verified blood donor!', 'success');
       setIsRegisterOpen(false);
@@ -199,10 +213,10 @@ export const BloodDonorsPage: React.FC = () => {
               }}
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-700"
             >
-              <option value="All">All Divisions</option>
+              <option value="All">All Divisions (সব বিভাগ)</option>
               {Object.keys(BANGLADESH_DIVISIONS).map((div) => (
                 <option key={div} value={div}>
-                  {div}
+                  {DIVISION_NAMES_BN[div] ? `${DIVISION_NAMES_BN[div]} (${div})` : div}
                 </option>
               ))}
             </select>
@@ -218,10 +232,10 @@ export const BloodDonorsPage: React.FC = () => {
               }}
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-700 disabled:bg-slate-50 disabled:text-slate-400"
             >
-              <option value="All">All Districts</option>
+              <option value="All">All Districts (সব জেলা)</option>
               {currentDistricts.map((d) => (
                 <option key={d} value={d}>
-                  {d}
+                  {DISTRICT_NAMES_BN[d] ? `${DISTRICT_NAMES_BN[d]} (${d})` : d}
                 </option>
               ))}
             </select>
@@ -440,7 +454,9 @@ export const BloodDonorsPage: React.FC = () => {
                       className="w-full px-2 py-1.5 border rounded-xl bg-white"
                     >
                       {Object.keys(BANGLADESH_DIVISIONS).map((div) => (
-                        <option key={div} value={div}>{div}</option>
+                        <option key={div} value={div}>
+                          {DIVISION_NAMES_BN[div] ? `${DIVISION_NAMES_BN[div]} (${div})` : div}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -456,7 +472,9 @@ export const BloodDonorsPage: React.FC = () => {
                       className="w-full px-2 py-1.5 border rounded-xl bg-white"
                     >
                       {(BANGLADESH_DIVISIONS[regDivision] || ['Dhaka']).map((d) => (
-                        <option key={d} value={d}>{d}</option>
+                        <option key={d} value={d}>
+                          {DISTRICT_NAMES_BN[d] ? `${DISTRICT_NAMES_BN[d]} (${d})` : d}
+                        </option>
                       ))}
                     </select>
                   </div>

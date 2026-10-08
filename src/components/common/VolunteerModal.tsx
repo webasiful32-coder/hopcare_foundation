@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS } from '../../data/bangladeshData';
+import { BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS, DIVISION_NAMES_BN, DISTRICT_NAMES_BN } from '../../data/bangladeshData';
+import { createVolunteer } from '../../services/apiClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, HandHeart, CheckCircle, Loader2 } from 'lucide-react';
 
@@ -68,27 +69,19 @@ export const VolunteerModal: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/volunteers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName,
-          email,
-          phone,
-          division,
-          district,
-          upazila,
-          skills: selectedSkills,
-          availability,
-          motivation,
-          preferredActivities: selectedActivities,
-          userId: user?.id
-        })
+      await createVolunteer({
+        fullName,
+        email,
+        phone,
+        division,
+        district,
+        upazila,
+        skills: selectedSkills,
+        availability,
+        motivation,
+        preferredActivities: selectedActivities,
+        userId: user?.id
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit application');
-      }
 
       setIsSuccess(true);
       addToast('Volunteer application submitted! Our team will review within 24 hours.', 'success');
@@ -200,7 +193,7 @@ export const VolunteerModal: React.FC = () => {
                 >
                   {Object.keys(BANGLADESH_DIVISIONS).map((div) => (
                     <option key={div} value={div}>
-                      {div}
+                      {DIVISION_NAMES_BN[div] ? `${DIVISION_NAMES_BN[div]} (${div})` : div}
                     </option>
                   ))}
                 </select>
@@ -219,7 +212,7 @@ export const VolunteerModal: React.FC = () => {
                 >
                   {currentDistricts.map((d) => (
                     <option key={d} value={d}>
-                      {d}
+                      {DISTRICT_NAMES_BN[d] ? `${DISTRICT_NAMES_BN[d]} (${d})` : d}
                     </option>
                   ))}
                 </select>

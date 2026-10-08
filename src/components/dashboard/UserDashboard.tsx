@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Donation, BloodRequest, ChatMessage, Conversation, BloodGroup } from '../../types';
 import { BLOOD_GROUPS, BANGLADESH_DIVISIONS, DISTRICT_UPAZILAS } from '../../data/bangladeshData';
+import { safeFetchJson } from '../../services/apiClient';
 import {
   Heart,
   Droplet,
@@ -42,18 +43,34 @@ export const UserDashboard: React.FC = () => {
 
   useEffect(() => {
     // Fetch user donations
-    fetch('/api/donations')
-      .then((r) => r.json())
-      .then((data: Donation[]) => {
-        setMyDonations(data.filter((d) => d.userId === user?.id || d.donorEmail === user?.email));
+    safeFetchJson<Donation[]>('/api/donations')
+      .then((res) => {
+        let list: Donation[] = [];
+        if (res.ok && Array.isArray(res.data)) {
+          list = res.data;
+        } else {
+          try {
+            const raw = localStorage.getItem('hopecare_donations_local');
+            list = raw ? JSON.parse(raw) : [];
+          } catch {}
+        }
+        setMyDonations(list.filter((d) => d.userId === user?.id || d.donorEmail === user?.email));
       })
       .catch(() => {});
 
     // Fetch user blood requests
-    fetch('/api/blood-requests')
-      .then((r) => r.json())
-      .then((data: BloodRequest[]) => {
-        setMyRequests(data.filter((r) => r.userId === user?.id || r.contactPerson === user?.fullName));
+    safeFetchJson<BloodRequest[]>('/api/blood-requests')
+      .then((res) => {
+        let list: BloodRequest[] = [];
+        if (res.ok && Array.isArray(res.data)) {
+          list = res.data;
+        } else {
+          try {
+            const raw = localStorage.getItem('hopecare_blood_requests_local');
+            list = raw ? JSON.parse(raw) : [];
+          } catch {}
+        }
+        setMyRequests(list.filter((r) => r.userId === user?.id || r.contactPerson === user?.fullName));
       })
       .catch(() => {});
 
