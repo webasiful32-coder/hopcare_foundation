@@ -5,6 +5,18 @@ import { loginUser, registerUser } from '../../services/apiClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Lock, Mail, User as UserIcon, Phone, ArrowRight, Loader2, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
+// [object Object] রোধ করার জন্য স্মার্ট এরর এক্সট্রাক্টর
+const getErrorMessage = (err: any, fallback: string): string => {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  if (typeof err.response?.data === 'string') return err.response.data;
+  if (err.response?.data?.error) return String(err.response.data.error);
+  if (err.response?.data?.message) return String(err.response.data.message);
+  if (err.error) return String(err.error);
+  if (err.message && typeof err.message === 'string' && err.message !== '[object Object]') return err.message;
+  return fallback;
+};
+
 export const AuthModal: React.FC = () => {
   const { isAuthOpen, closeAuthModal, authMode, openAuthModal, login, addToast, setCurrentPage } = useApp();
 
@@ -27,13 +39,15 @@ export const AuthModal: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const authData = await loginUser(email, password);
+      const authData = await loginUser(email.trim().toLowerCase(), password);
       login(authData.token, authData.user);
       addToast(`স্বাগতম, ${authData.user.fullName}!`, 'success');
       closeAuthModal();
       setCurrentPage('home');
     } catch (err: any) {
-      addToast(err.message || 'লগইন ব্যর্থ হয়েছে', 'error');
+      // [object Object] এর বদলে আসল মেসেজ শো করবে
+      const errorMsg = getErrorMessage(err, 'ইমেইল বা পাসওয়ার্ড সঠিক নয়');
+      addToast(errorMsg, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +60,7 @@ export const AuthModal: React.FC = () => {
     try {
       const authData = await registerUser({
         fullName: fullName.trim(),
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         phone: phone.trim(),
         password,
         division,
@@ -59,7 +73,8 @@ export const AuthModal: React.FC = () => {
       closeAuthModal();
       setCurrentPage('home');
     } catch (err: any) {
-      addToast(err.message || 'নিবন্ধন ব্যর্থ হয়েছে', 'error');
+      const errorMsg = getErrorMessage(err, 'নিবন্ধন ব্যর্থ হয়েছে');
+      addToast(errorMsg, 'error');
     } finally {
       setIsSubmitting(false);
     }
