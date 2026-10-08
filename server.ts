@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
-import { createServer as createViteServer } from 'vite';
 
 import { dbStore } from './server/db/store';
 import { postgresService } from './server/db/postgres';
@@ -33,8 +32,6 @@ app.use((req, res, next) => {
 
 // ============================================================
 // Config (from .env)
-//   ADMIN_EMAILS=a@mail.com,b@mail.com   -> these emails become ADMIN
-//   AUTO_APPROVE_DONATIONS=true          -> bKash/Nagad donations count immediately (not recommended)
 // ============================================================
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
   .split(',')
@@ -80,8 +77,7 @@ const rowToUser = (row: any) => ({
 });
 
 /**
- * Safe Neon query: never throws, returns null when Neon is not connected or the query fails.
- * Errors are printed in the server terminal so they are never silent.
+ * Safe Neon query
  */
 const neon = async (label: string, sql: string, params: any[] = []): Promise<any | null> => {
   if (!postgresService.isConnected) return null;
@@ -95,7 +91,7 @@ const neon = async (label: string, sql: string, params: any[] = []): Promise<any
 };
 
 // ============================================================
-// Neon save helpers (all column names match the Neon schema)
+// Neon save helpers
 // ============================================================
 const saveUserToNeon = (u: any) =>
   neon(
@@ -294,7 +290,7 @@ const saveContactToNeon = (m: any) =>
   );
 
 // ============================================================
-// Audit log helper (memory + Neon)
+// Audit log helper
 // ============================================================
 const logAudit = (req: Request, action: string, entity: string, entityId: string | undefined, details: string) => {
   const admin = (req as any).user;
@@ -323,8 +319,6 @@ const logAudit = (req: Request, action: string, entity: string, entityId: string
 
 // ============================================================
 // Authentication Middleware
-// The role is always read fresh from Neon (when connected), so changing a role
-// in the database or admin panel works without restarting the server.
 // ============================================================
 const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -389,14 +383,12 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(400).json({ error: 'All registration fields are required' });
   }
 
-  // Check existing in memory store
   for (const existing of dbStore.users.values()) {
     if (existing.email.toLowerCase() === email.toLowerCase()) {
       return res.status(409).json({ error: 'Email is already registered' });
     }
   }
 
-  // Check existing in Neon PostgreSQL if connected
   if (postgresService.isConnected) {
     try {
       const checkRes = await postgresService.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email]);
@@ -408,11 +400,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
   }
 
-  // Everyone registers as DONOR. Only emails listed in ADMIN_EMAILS (.env) become ADMIN.
-  // The role is NEVER taken from the request body.
   const assignedRole: UserRole = ADMIN_EMAILS.includes(email.toLowerCase().trim()) ? 'ADMIN' : 'DONOR';
-
-  // Use valid UUID for PostgreSQL UUID column compatibility
   const userId = crypto.randomUUID();
   const passwordHash = authService.hashPassword(password);
   const safeDivision = (division && division.trim()) || 'Dhaka';
@@ -436,19 +424,11 @@ app.post('/api/auth/register', async (req, res) => {
 
   dbStore.users.set(userId, newUser);
 
-  // Sync to Neon PostgreSQL
   if (postgresService.isConnected) {
-    const pgRes = await saveUserToNeon(newUser);
-    if (pgRes) {
-      console.log(`[Neon Postgres] Saved user to Neon: ${newUser.email} (UUID: ${userId}), role: ${assignedRole}`);
-    }
-  } else {
-    console.log('[Database Notice] Neon not connected yet. Saved in memory. Enter DATABASE_URL to persist to Neon cloud.');
+    await saveUserToNeon(newUser);
   }
 
   const token = authService.generateSessionToken(userId, assignedRole);
-
-  // Strip password hash
   const { passwordHash: _, ...safeUser } = newUser;
   res.status(201).json({ token, user: safeUser });
 });
@@ -462,7 +442,6 @@ app.post('/api/auth/login', async (req, res) => {
   const emailLower = String(email).toLowerCase().trim();
   let matchedUser: any = null;
 
-  // 1. Neon is the source of truth: when connected, read the user (and role) from there first
   if (postgresService.isConnected) {
     const dbRes = await neon('Login Search', 'SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [emailLower]);
     if (dbRes && dbRes.rows && dbRes.rows.length > 0) {
@@ -471,7 +450,6 @@ app.post('/api/auth/login', async (req, res) => {
     }
   }
 
-  // 2. Fall back to the in-memory store
   if (!matchedUser) {
     for (const user of dbStore.users.values()) {
       if (user.email.toLowerCase() === emailLower) {
@@ -494,7 +472,6 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  // Emails listed in ADMIN_EMAILS are always ADMIN
   if (ADMIN_EMAILS.includes(emailLower) && matchedUser.role !== 'ADMIN') {
     matchedUser.role = 'ADMIN';
     dbStore.users.set(matchedUser.id, matchedUser);
@@ -502,8 +479,6 @@ app.post('/api/auth/login', async (req, res) => {
       await neon('Admin Promote', 'UPDATE users SET role=$1 WHERE id=$2', ['ADMIN', matchedUser.id]);
     }
   }
-
-  console.log(`[Login] ${emailLower} -> role: ${matchedUser.role}`);
 
   const token = authService.generateSessionToken(matchedUser.id, matchedUser.role);
   const { passwordHash: _, ...safeUser } = matchedUser;
@@ -518,7 +493,6 @@ app.get('/api/auth/me', authenticate, (req, res) => {
 
 app.post('/api/auth/forgot-password', (req, res) => {
   const { email } = req.body;
-  // Architecture ready for email gateway
   res.json({ message: `Password reset instructions dispatched to ${email || 'your email'}.` });
 });
 
@@ -529,33 +503,25 @@ app.get('/api/campaigns', (req, res) => {
   const { category, status, search } = req.query;
   let list = Array.from(dbStore.campaigns.values());
 
-  if (category && category !== 'All') {
-    list = list.filter(c => c.category === category);
-  }
-  if (status && status !== 'All') {
-    list = list.filter(c => c.status === status);
-  }
+  if (category && category !== 'All') list = list.filter(c => c.category === category);
+  if (status && status !== 'All') list = list.filter(c => c.status === status);
   if (search) {
     const q = String(search).toLowerCase();
     list = list.filter(c => c.title.toLowerCase().includes(q) || c.shortDescription.toLowerCase().includes(q));
   }
-
   res.json(list);
 });
 
 app.get('/api/campaigns/:id', (req, res) => {
   const campaign = dbStore.campaigns.get(req.params.id);
-  if (!campaign) {
-    return res.status(404).json({ error: 'Campaign not found' });
-  }
+  if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
   res.json(campaign);
 });
 
 app.post('/api/campaigns', authenticate, requireRole('ADMIN'), (req, res) => {
   const { title, category, shortDescription, fullDescription, targetAmount, featuredImageUrl, deadline, organizerName, isUrgent } = req.body;
-  if (!title || !category) {
-    return res.status(400).json({ error: 'Title and category are required' });
-  }
+  if (!title || !category) return res.status(400).json({ error: 'Title and category are required' });
+
   const id = crypto.randomUUID();
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || id;
 
@@ -582,7 +548,6 @@ app.post('/api/campaigns', authenticate, requireRole('ADMIN'), (req, res) => {
   dbStore.campaigns.set(id, newCampaign);
   saveCampaignToNeon(newCampaign);
   logAudit(req, 'CREATE_CAMPAIGN', 'campaign', id, `Created campaign "${title}"`);
-
   res.status(201).json(newCampaign);
 });
 
@@ -606,7 +571,6 @@ app.put('/api/campaigns/:id', authenticate, requireRole('ADMIN'), (req, res) => 
   dbStore.campaigns.set(campaign.id, campaign);
   saveCampaignToNeon(campaign);
   logAudit(req, 'UPDATE_CAMPAIGN', 'campaign', campaign.id, `Updated campaign "${campaign.title}"`);
-
   res.json(campaign);
 });
 
@@ -617,16 +581,11 @@ app.delete('/api/campaigns/:id', authenticate, requireRole('ADMIN'), (req, res) 
   dbStore.campaigns.delete(req.params.id);
   neon('Campaign Delete', 'DELETE FROM campaigns WHERE id=$1', [req.params.id]);
   logAudit(req, 'DELETE_CAMPAIGN', 'campaign', req.params.id, `Deleted campaign "${campaign.title}"`);
-
   res.json({ success: true, message: 'Campaign deleted successfully' });
 });
 
 // ============================================================
-// Online Donation & Payment API
-//   bKash / Nagad  : donor sends money manually and submits the Transaction ID.
-//                    The donation is saved as "Pending" and only counts toward the campaign
-//                    after an admin approves it (PATCH /api/admin/donations/:id/status).
-//   SSLCommerz / Stripe : unchanged (handled by paymentService).
+// Donations API
 // ============================================================
 app.post('/api/donations', async (req, res) => {
   try {
@@ -643,23 +602,18 @@ app.post('/api/donations', async (req, res) => {
     }
 
     const campaign = dbStore.campaigns.get(campaignId);
-    if (!campaign) {
-      return res.status(404).json({ error: 'Campaign not found' });
-    }
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
 
     const gateway = paymentGateway || 'bKash';
     const isManual = gateway === 'bKash' || gateway === 'Nagad';
     const cleanTxn = String(submittedTxnId || '').trim();
 
     if (isManual) {
-      if (!cleanTxn) {
-        return res.status(400).json({ error: `Please enter your ${gateway} Transaction ID` });
-      }
+      if (!cleanTxn) return res.status(400).json({ error: `Please enter your ${gateway} Transaction ID` });
       if (!/^[A-Za-z0-9]{6,30}$/.test(cleanTxn)) {
         return res.status(400).json({ error: 'Transaction ID looks invalid. Use letters and numbers only.' });
       }
 
-      // The same Transaction ID can never be used twice
       let duplicate = false;
       for (const d of dbStore.donations.values()) {
         if (d.paymentGateway === gateway && String(d.transactionId).toLowerCase() === cleanTxn.toLowerCase()) {
@@ -683,7 +637,6 @@ app.post('/api/donations', async (req, res) => {
     const donationId = crypto.randomUUID();
     const receiptNumber = 'REC-2026-' + Math.floor(10000 + Math.random() * 90000);
 
-    // Modular Payment processing through PaymentService
     const paymentResult = await paymentService.processDonationPayment(
       gateway,
       Number(amount),
@@ -712,7 +665,6 @@ app.post('/api/donations', async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    // Campaign progress only increases for confirmed payments
     if (paymentStatus === 'Successful') {
       campaign.collectedAmount += Number(amount);
       campaign.donorCount += 1;
@@ -720,37 +672,24 @@ app.post('/api/donations', async (req, res) => {
       dbStore.campaigns.set(campaign.id, campaign);
     }
 
-    // Save records
     dbStore.donations.set(donationId, donation);
     dbStore.paymentTransactions.set(paymentResult.paymentTx.id, paymentResult.paymentTx);
 
-    // Persist to Neon (campaign first, because donations reference it)
     saveCampaignToNeon(campaign).then(() => saveDonationToNeon(donation));
 
-    // Create Notification
     const notifId = 'notif-' + Date.now();
-    const notification: any = {
+    dbStore.notifications.set(notifId, {
       id: notifId,
       userId: userId || undefined,
       type: 'donation_success',
-      title: needsApproval
-        ? `Donation Submitted: ৳${Number(amount).toLocaleString()}`
-        : `Donation Received: ৳${Number(amount).toLocaleString()}`,
-      message: needsApproval
-        ? `Thank you for supporting "${campaign.title}". We will verify your ${gateway} payment shortly. Receipt #${receiptNumber}.`
-        : `Thank you for supporting "${campaign.title}". Receipt #${receiptNumber} ready.`,
+      title: needsApproval ? `Donation Submitted: ৳${Number(amount).toLocaleString()}` : `Donation Received: ৳${Number(amount).toLocaleString()}`,
+      message: `Thank you for supporting "${campaign.title}". Receipt #${receiptNumber}.`,
       isRead: false,
       linkUrl: '/dashboard/donations',
       createdAt: new Date().toISOString()
-    };
-    dbStore.notifications.set(notifId, notification);
-
-    res.status(201).json({
-      success: true,
-      pendingApproval: needsApproval,
-      donation,
-      paymentResult
     });
+
+    res.status(201).json({ success: true, pendingApproval: needsApproval, donation, paymentResult });
   } catch (error: any) {
     console.error('Donation error:', error);
     res.status(500).json({ error: 'Failed to process donation payment' });
@@ -760,22 +699,15 @@ app.post('/api/donations', async (req, res) => {
 app.get('/api/donations', (req, res) => {
   const { userId, campaignId } = req.query;
   let list = Array.from(dbStore.donations.values());
-  if (userId) {
-    list = list.filter(d => d.userId === userId);
-  }
-  if (campaignId) {
-    list = list.filter(d => d.campaignId === campaignId);
-  }
+  if (userId) list = list.filter(d => d.userId === userId);
+  if (campaignId) list = list.filter(d => d.campaignId === campaignId);
   res.json(list.reverse());
 });
 
-// ---- Admin: review and approve manual (bKash / Nagad) donations ----
 app.get('/api/admin/donations', authenticate, requireRole('ADMIN'), (req, res) => {
   const { status } = req.query;
   let list = Array.from(dbStore.donations.values());
-  if (status && status !== 'All') {
-    list = list.filter(d => d.paymentStatus === status);
-  }
+  if (status && status !== 'All') list = list.filter(d => d.paymentStatus === status);
   res.json(list.reverse());
 });
 
@@ -813,24 +745,6 @@ app.patch('/api/admin/donations/:id/status', authenticate, requireRole('ADMIN'),
     saveDonationToNeon(donation);
   }
 
-  const notifId = 'notif-don-' + Date.now();
-  const notification: any = {
-    id: notifId,
-    userId: donation.userId || undefined,
-    type: 'donation_success',
-    title: status === 'Successful' ? 'Donation Verified' : `Donation ${status}`,
-    message:
-      status === 'Successful'
-        ? `Your ৳${Number(donation.amount).toLocaleString()} donation (Receipt #${donation.receiptNumber}) has been verified. Thank you!`
-        : `Your donation (Receipt #${donation.receiptNumber}) was marked as ${status}.`,
-    isRead: false,
-    linkUrl: '/dashboard/donations',
-    createdAt: new Date().toISOString()
-  };
-  dbStore.notifications.set(notifId, notification);
-
-  logAudit(req, 'UPDATE_DONATION_STATUS', 'donation', donation.id, `Donation ${donation.receiptNumber} set to ${status}`);
-
   res.json(donation);
 });
 
@@ -841,48 +755,22 @@ app.get('/api/blood-donors', (req, res) => {
   const { bloodGroup, division, district, upazila, availableOnly } = req.query;
   let list = Array.from(dbStore.bloodDonors.values());
 
-  if (bloodGroup && bloodGroup !== 'All') {
-    list = list.filter(d => d.bloodGroup === bloodGroup);
-  }
-  if (division && division !== 'All') {
-    list = list.filter(d => d.division.toLowerCase() === String(division).toLowerCase());
-  }
-  if (district && district !== 'All') {
-    list = list.filter(d => d.district.toLowerCase() === String(district).toLowerCase());
-  }
-  if (upazila && upazila !== 'All') {
-    list = list.filter(d => d.upazila.toLowerCase() === String(upazila).toLowerCase());
-  }
-  if (availableOnly === 'true') {
-    list = list.filter(d => d.isAvailable);
-  }
+  if (bloodGroup && bloodGroup !== 'All') list = list.filter(d => d.bloodGroup === bloodGroup);
+  if (division && division !== 'All') list = list.filter(d => d.division.toLowerCase() === String(division).toLowerCase());
+  if (district && district !== 'All') list = list.filter(d => d.district.toLowerCase() === String(district).toLowerCase());
+  if (upazila && upazila !== 'All') list = list.filter(d => d.upazila.toLowerCase() === String(upazila).toLowerCase());
+  if (availableOnly === 'true') list = list.filter(d => d.isAvailable);
 
-  // Safe public view (shielding raw email/phone until authorized)
   const safeDonors = list.map(d => ({
     ...d,
-    phone: d.phone.substring(0, 7) + 'XXXX' // privacy mask
+    phone: d.phone.substring(0, 7) + 'XXXX'
   }));
 
   res.json(safeDonors);
 });
 
 app.post('/api/blood-donors', (req, res) => {
-  const {
-    fullName,
-    bloodGroup,
-    phone,
-    email,
-    division,
-    district,
-    upazila,
-    addressArea,
-    gender,
-    dateOfBirth,
-    lastDonationDate,
-    emergencyContactPreference,
-    userId
-  } = req.body;
-
+  const { fullName, bloodGroup, phone, email, division, district, upazila, addressArea, gender, dateOfBirth, lastDonationDate, emergencyContactPreference, userId } = req.body;
   if (!fullName || !bloodGroup || !phone || !district) {
     return res.status(400).json({ error: 'Full name, blood group, phone, and district are mandatory' });
   }
@@ -917,7 +805,6 @@ app.post('/api/blood-donors', (req, res) => {
 app.patch('/api/blood-donors/:id', (req, res) => {
   const donor = dbStore.bloodDonors.get(req.params.id);
   if (!donor) return res.status(404).json({ error: 'Donor not found' });
-
   const updated = { ...donor, ...req.body };
   dbStore.bloodDonors.set(donor.id, updated);
   saveBloodDonorToNeon(updated);
@@ -933,48 +820,22 @@ app.delete('/api/blood-donors/:id', authenticate, requireRole('ADMIN'), (req, re
 });
 
 // ============================================================
-// Emergency Blood Requests API
+// Blood Requests API
 // ============================================================
 app.get('/api/blood-requests', (req, res) => {
   const { bloodGroup, district, emergencyLevel, status } = req.query;
   let list = Array.from(dbStore.bloodRequests.values());
 
-  if (bloodGroup && bloodGroup !== 'All') {
-    list = list.filter(r => r.bloodGroup === bloodGroup);
-  }
-  if (district && district !== 'All') {
-    list = list.filter(r => r.district.toLowerCase() === String(district).toLowerCase());
-  }
-  if (emergencyLevel && emergencyLevel !== 'All') {
-    list = list.filter(r => r.emergencyLevel === emergencyLevel);
-  }
-  if (status && status !== 'All') {
-    list = list.filter(r => r.status === status);
-  }
+  if (bloodGroup && bloodGroup !== 'All') list = list.filter(r => r.bloodGroup === bloodGroup);
+  if (district && district !== 'All') list = list.filter(r => r.district.toLowerCase() === String(district).toLowerCase());
+  if (emergencyLevel && emergencyLevel !== 'All') list = list.filter(r => r.emergencyLevel === emergencyLevel);
+  if (status && status !== 'All') list = list.filter(r => r.status === status);
 
   res.json(list.reverse());
 });
 
 app.post('/api/blood-requests', (req, res) => {
-  const {
-    patientName,
-    bloodGroup,
-    requiredUnits,
-    hospitalName,
-    hospitalAddress,
-    division,
-    district,
-    upazila,
-    requiredDate,
-    requiredTime,
-    emergencyLevel,
-    contactPerson,
-    contactPhone,
-    patientCondition,
-    additionalInfo,
-    userId
-  } = req.body;
-
+  const { patientName, bloodGroup, requiredUnits, hospitalName, hospitalAddress, division, district, upazila, requiredDate, requiredTime, emergencyLevel, contactPerson, contactPhone, patientCondition, additionalInfo, userId } = req.body;
   if (!patientName || !bloodGroup || !hospitalName || !district || !contactPhone) {
     return res.status(400).json({ error: 'Patient, blood group, hospital, district, and contact phone are required' });
   }
@@ -1003,7 +864,6 @@ app.post('/api/blood-requests', (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  // Find matching donors count
   const allDonors = Array.from(dbStore.bloodDonors.values());
   const matches = bloodMatchingService.findMatches(newRequest, allDonors);
   newRequest.matchedDonorsCount = matches.length;
@@ -1011,34 +871,12 @@ app.post('/api/blood-requests', (req, res) => {
   dbStore.bloodRequests.set(id, newRequest);
   saveBloodRequestToNeon(newRequest);
 
-  // Send system notification
-  const notifId = 'notif-req-' + Date.now();
-  dbStore.notifications.set(notifId, {
-    id: notifId,
-    type: 'blood_request',
-    title: `🚨 Emergency ${bloodGroup} Blood Request`,
-    message: `${newRequest.requiredUnits} unit(s) needed at ${hospitalName}, ${district}. ${matches.length} matched donors found.`,
-    isRead: false,
-    linkUrl: '/blood-requests',
-    createdAt: new Date().toISOString()
-  });
-
   res.status(201).json({ request: newRequest, matchedDonors: matches.slice(0, 5) });
-});
-
-app.get('/api/blood-requests/:id/matches', (req, res) => {
-  const request = dbStore.bloodRequests.get(req.params.id);
-  if (!request) return res.status(404).json({ error: 'Blood request not found' });
-
-  const allDonors = Array.from(dbStore.bloodDonors.values());
-  const matches = bloodMatchingService.findMatches(request, allDonors);
-  res.json(matches);
 });
 
 app.patch('/api/blood-requests/:id/status', (req, res) => {
   const request = dbStore.bloodRequests.get(req.params.id);
   if (!request) return res.status(404).json({ error: 'Blood request not found' });
-
   const { status } = req.body;
   request.status = status;
   dbStore.bloodRequests.set(request.id, request);
@@ -1046,47 +884,13 @@ app.patch('/api/blood-requests/:id/status', (req, res) => {
   res.json(request);
 });
 
-app.put('/api/blood-requests/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const request = dbStore.bloodRequests.get(req.params.id);
-  if (!request) return res.status(404).json({ error: 'Blood request not found' });
-
-  const { patientName, bloodGroup, requiredUnits, hospitalName, hospitalAddress, emergencyLevel, contactPerson, contactPhone, status } = req.body;
-  if (patientName) request.patientName = patientName;
-  if (bloodGroup) request.bloodGroup = bloodGroup;
-  if (requiredUnits) request.requiredUnits = Number(requiredUnits);
-  if (hospitalName) request.hospitalName = hospitalName;
-  if (hospitalAddress) request.hospitalAddress = hospitalAddress;
-  if (emergencyLevel) request.emergencyLevel = emergencyLevel;
-  if (contactPerson) request.contactPerson = contactPerson;
-  if (contactPhone) request.contactPhone = contactPhone;
-  if (status) request.status = status;
-
-  dbStore.bloodRequests.set(request.id, request);
-  saveBloodRequestToNeon(request);
-  res.json(request);
-});
-
-app.delete('/api/blood-requests/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const request = dbStore.bloodRequests.get(req.params.id);
-  if (!request) return res.status(404).json({ error: 'Blood request not found' });
-
-  dbStore.bloodRequests.delete(req.params.id);
-  neon('Blood Request Delete', 'DELETE FROM blood_requests WHERE id=$1', [req.params.id]);
-  res.json({ success: true, message: 'Blood request deleted successfully' });
-});
-
 // ============================================================
-// Volunteers API
+// Volunteers, Beneficiaries, Blog, Gallery, Contact API
 // ============================================================
-app.get('/api/volunteers', (req, res) => {
-  res.json(Array.from(dbStore.volunteers.values()));
-});
-
+app.get('/api/volunteers', (req, res) => res.json(Array.from(dbStore.volunteers.values())));
 app.post('/api/volunteers', (req, res) => {
   const { fullName, email, phone, division, district, upazila, skills, availability, motivation, preferredActivities, userId } = req.body;
-  if (!fullName || !email || !phone || !district) {
-    return res.status(400).json({ error: 'Name, email, phone and district are required' });
-  }
+  if (!fullName || !email || !phone || !district) return res.status(400).json({ error: 'Required fields missing' });
 
   const id = crypto.randomUUID();
   const vol = {
@@ -1112,150 +916,13 @@ app.post('/api/volunteers', (req, res) => {
   res.status(201).json(vol);
 });
 
-app.patch('/api/volunteers/:id/status', authenticate, requireRole('ADMIN'), (req, res) => {
-  const vol = dbStore.volunteers.get(req.params.id);
-  if (!vol) return res.status(404).json({ error: 'Volunteer not found' });
-  vol.status = req.body.status;
-  dbStore.volunteers.set(vol.id, vol);
-  saveVolunteerToNeon(vol);
-  res.json(vol);
-});
-
-app.delete('/api/volunteers/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const vol = dbStore.volunteers.get(req.params.id);
-  if (!vol) return res.status(404).json({ error: 'Volunteer not found' });
-  dbStore.volunteers.delete(req.params.id);
-  neon('Volunteer Delete', 'DELETE FROM volunteers WHERE id=$1', [req.params.id]);
-  res.json({ success: true, message: 'Volunteer deleted' });
-});
-
-// ============================================================
-// Beneficiaries, Blog, Gallery, Contact API
-// ============================================================
-app.get('/api/beneficiaries', (req, res) => {
-  res.json(Array.from(dbStore.beneficiaries.values()));
-});
-
-app.post('/api/beneficiaries', authenticate, requireRole('ADMIN'), (req, res) => {
-  const { name, photoUrl, imageUrl, location, category, story, supportRequired, grantAmount, supportReceived } = req.body;
-  if (!name || !story) {
-    return res.status(400).json({ error: 'Name and story are required' });
-  }
-  const id = crypto.randomUUID();
-  const beneficiary: any = {
-    id,
-    name,
-    photoUrl: photoUrl || imageUrl || 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&w=600&q=80',
-    location: location || 'Dhaka',
-    category: category || 'Patient',
-    story,
-    supportRequired: Number(supportRequired || grantAmount || 30000),
-    supportReceived: Number(supportReceived || 0),
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  };
-  dbStore.beneficiaries.set(id, beneficiary);
-  saveBeneficiaryToNeon(beneficiary);
-  res.status(201).json(beneficiary);
-});
-
-app.put('/api/beneficiaries/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const ben = dbStore.beneficiaries.get(req.params.id);
-  if (!ben) return res.status(404).json({ error: 'Beneficiary not found' });
-  const updated = { ...ben, ...req.body };
-  dbStore.beneficiaries.set(ben.id, updated);
-  saveBeneficiaryToNeon(updated);
-  res.json(updated);
-});
-
-app.delete('/api/beneficiaries/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const ben = dbStore.beneficiaries.get(req.params.id);
-  if (!ben) return res.status(404).json({ error: 'Beneficiary not found' });
-  dbStore.beneficiaries.delete(req.params.id);
-  neon('Beneficiary Delete', 'DELETE FROM beneficiaries WHERE id=$1', [req.params.id]);
-  res.json({ success: true, message: 'Beneficiary deleted' });
-});
-
-app.get('/api/blog', (req, res) => {
-  res.json(Array.from(dbStore.blogPosts.values()));
-});
-
-app.post('/api/blog', authenticate, requireRole('ADMIN'), (req, res) => {
-  const { title, excerpt, summary, content, author, readTimeMinutes, coverImage, category, tags } = req.body;
-  if (!title || !content) return res.status(400).json({ error: 'Title and content are required' });
-  const id = crypto.randomUUID();
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || id;
-  const post: any = {
-    id,
-    title,
-    slug,
-    coverImage: coverImage || 'https://images.unsplash.com/photo-1579208575657-c595a053b977?auto=format&fit=crop&w=800&q=80',
-    content,
-    excerpt: excerpt || summary || title,
-    author: author || 'HopeCare Editorial',
-    category: category || 'Updates',
-    tags: tags || ['Humanitarian', 'Bangladesh'],
-    publishedDate: new Date().toISOString().split('T')[0],
-    status: 'Published',
-    readTimeMinutes: Number(readTimeMinutes || 4)
-  };
-  dbStore.blogPosts.set(id, post);
-  saveBlogToNeon(post);
-  res.status(201).json(post);
-});
-
-app.put('/api/blog/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const post = dbStore.blogPosts.get(req.params.id);
-  if (!post) return res.status(404).json({ error: 'Post not found' });
-  const updated = { ...post, ...req.body };
-  dbStore.blogPosts.set(post.id, updated);
-  saveBlogToNeon(updated);
-  res.json(updated);
-});
-
-app.delete('/api/blog/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const post = dbStore.blogPosts.get(req.params.id);
-  if (!post) return res.status(404).json({ error: 'Post not found' });
-  dbStore.blogPosts.delete(req.params.id);
-  neon('Blog Delete', 'DELETE FROM blog_posts WHERE id=$1', [req.params.id]);
-  res.json({ success: true, message: 'Blog post deleted' });
-});
-
-app.get('/api/gallery', (req, res) => {
-  res.json(Array.from(dbStore.galleryItems.values()));
-});
-
-app.post('/api/gallery', authenticate, requireRole('ADMIN'), (req, res) => {
-  const { title, category, imageUrl, location, description } = req.body;
-  if (!title || !imageUrl) return res.status(400).json({ error: 'Title and image URL are required' });
-  const id = crypto.randomUUID();
-  const item = {
-    id,
-    title,
-    category: category || 'General',
-    imageUrl,
-    date: new Date().toISOString().split('T')[0],
-    location: location || 'Bangladesh',
-    description: description || ''
-  };
-  dbStore.galleryItems.set(id, item);
-  saveGalleryToNeon(item);
-  res.status(201).json(item);
-});
-
-app.delete('/api/gallery/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const item = dbStore.galleryItems.get(req.params.id);
-  if (!item) return res.status(404).json({ error: 'Gallery item not found' });
-  dbStore.galleryItems.delete(req.params.id);
-  neon('Gallery Delete', 'DELETE FROM gallery_items WHERE id=$1', [req.params.id]);
-  res.json({ success: true, message: 'Gallery item deleted' });
-});
+app.get('/api/beneficiaries', (req, res) => res.json(Array.from(dbStore.beneficiaries.values())));
+app.get('/api/blog', (req, res) => res.json(Array.from(dbStore.blogPosts.values())));
+app.get('/api/gallery', (req, res) => res.json(Array.from(dbStore.galleryItems.values())));
 
 app.post('/api/contact', (req, res) => {
   const { name, email, phone, subject, message } = req.body;
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: 'Name, email, and message are required' });
-  }
+  if (!name || !email || !message) return res.status(400).json({ error: 'Name, email, and message are required' });
 
   const id = 'msg-' + Date.now();
   const item = {
@@ -1269,104 +936,9 @@ app.post('/api/contact', (req, res) => {
     replyStatus: 'Pending',
     createdAt: new Date().toISOString()
   };
-
   dbStore.contactMessages.set(id, item);
   saveContactToNeon(item);
-  res.status(201).json({ success: true, message: 'Message received. We will respond promptly.' });
-});
-
-app.get('/api/contact', authenticate, requireRole('ADMIN'), (req, res) => {
-  res.json(Array.from(dbStore.contactMessages.values()).reverse());
-});
-
-// ============================================================
-// Chat API
-// ============================================================
-
-app.get('/api/users/public', authenticate, (req, res) => {
-  const usersList = Array.from(dbStore.users.values()).map(u => ({
-    id: u.id,
-    fullName: u.fullName,
-    avatarUrl: u.avatarUrl,
-    role: u.role
-  })).filter(u => u.id !== (req as any).user.id);
-  res.json(usersList);
-});
-
-app.get('/api/chat/conversations', authenticate, (req, res) => {
-  const myId = (req as any).user.id;
-  const myConvs = Array.from(dbStore.conversations.values()).filter(c => c.participants.some(p => p.id === myId));
-  res.json(myConvs);
-});
-
-
-app.post('/api/chat/conversations', authenticate, (req, res) => {
-  const myId = (req as any).user.id;
-  const { recipientId } = req.body;
-  if (!recipientId) return res.status(400).json({ error: 'recipientId is required' });
-
-  const recipient = dbStore.users.get(recipientId);
-  if (!recipient) return res.status(404).json({ error: 'User not found' });
-
-  // Check if conversation already exists
-  const existing = Array.from(dbStore.conversations.values()).find(
-    c => c.participants.some(p => p.id === myId) && c.participants.some(p => p.id === recipientId)
-  );
-  
-  if (existing) {
-    return res.json(existing);
-  }
-
-  const newConv = {
-    id: 'conv-' + Date.now(),
-    participants: [
-      { id: myId, name: (req as any).user.fullName, role: (req as any).user.role },
-      { id: recipient.id, name: recipient.fullName, role: recipient.role }
-    ],
-    subject: `Chat with ${recipient.fullName}`,
-    lastMessage: 'Conversation started',
-    lastMessageTime: new Date().toISOString(),
-    unreadCount: 0
-  };
-
-  dbStore.conversations.set(newConv.id, newConv);
-  res.status(201).json(newConv);
-});
-
-app.get('/api/chat/messages/:convId', authenticate, (req, res) => {
-  const list = Array.from(dbStore.messages.values()).filter(m => m.conversationId === req.params.convId);
-  res.json(list);
-});
-
-app.post('/api/chat/messages', authenticate, (req, res) => {
-  const { conversationId, senderId, senderName, senderRole, text } = req.body;
-  if (!conversationId || !text) {
-    return res.status(400).json({ error: 'Conversation and text are required' });
-  }
-
-  const id = 'msg-' + Date.now();
-  const msg = {
-    id,
-    conversationId,
-    senderId: senderId || 'anon',
-    senderName: senderName || 'User',
-    senderRole: (senderRole || 'DONOR') as UserRole,
-    text,
-    timestamp: new Date().toISOString(),
-    isRead: false
-  };
-
-  dbStore.messages.set(id, msg);
-
-  // Update conversation
-  const conv = dbStore.conversations.get(conversationId);
-  if (conv) {
-    conv.lastMessage = text;
-    conv.lastMessageTime = msg.timestamp;
-    dbStore.conversations.set(conv.id, conv);
-  }
-
-  res.status(201).json(msg);
+  res.status(201).json({ success: true, message: 'Message received.' });
 });
 
 // ============================================================
@@ -1385,268 +957,11 @@ app.patch('/api/notifications/read-all', (req, res) => {
 });
 
 // ============================================================
-// Admin Metrics & Reports API
-// ============================================================
-app.get('/api/admin/metrics', authenticate, requireRole('ADMIN'), (req, res) => {
-  const totalUsers = dbStore.users.size;
-  const totalBloodDonors = dbStore.bloodDonors.size;
-  const totalVolunteers = dbStore.volunteers.size;
-  const totalCampaigns = dbStore.campaigns.size;
-
-  let totalDonationsAmount = 0;
-  let pendingDonations = 0;
-  for (const d of dbStore.donations.values()) {
-    if (d.paymentStatus === 'Successful') {
-      totalDonationsAmount += d.amount;
-    } else if (d.paymentStatus === 'Pending') {
-      pendingDonations += 1;
-    }
-  }
-
-  const activeBloodRequests = Array.from(dbStore.bloodRequests.values()).filter(r => r.status === 'Searching' || r.status === 'Pending').length;
-  const criticalRequests = Array.from(dbStore.bloodRequests.values()).filter(r => r.emergencyLevel === 'Critical').length;
-  const pendingVolunteers = Array.from(dbStore.volunteers.values()).filter(v => v.status === 'Pending').length;
-
-  res.json({
-    totalUsers,
-    totalBloodDonors,
-    totalVolunteers,
-    totalCampaigns,
-    totalDonationsCount: dbStore.donations.size,
-    totalDonationsAmount,
-    pendingDonations,
-    activeBloodRequests,
-    criticalRequests,
-    pendingVolunteers
-  });
-});
-
-app.get('/api/admin/users', authenticate, requireRole('ADMIN'), async (req, res) => {
-  if (postgresService.isConnected) {
-    try {
-      const dbRes = await postgresService.query(
-        'SELECT id, full_name as "fullName", email, phone, role, division, district, upazila, avatar_url as "avatarUrl", is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt" FROM users ORDER BY created_at DESC'
-      );
-      if (dbRes && dbRes.rows) {
-        // Also update memory store
-        for (const row of dbRes.rows) {
-          const existing = dbStore.users.get(row.id);
-          dbStore.users.set(row.id, {
-            ...(existing || {}),
-            id: row.id,
-            fullName: row.fullName,
-            email: row.email,
-            phone: row.phone,
-            role: row.role as UserRole,
-            division: row.division,
-            district: row.district,
-            upazila: row.upazila,
-            isActive: row.isActive,
-            avatarUrl: row.avatarUrl,
-            createdAt: row.createdAt,
-            updatedAt: row.updatedAt,
-            passwordHash: existing?.passwordHash || ''
-          });
-        }
-        return res.json(dbRes.rows);
-      }
-    } catch (err: any) {
-      console.warn('[Postgres Users Query Error]:', err.message);
-    }
-  }
-
-  const usersList = Array.from(dbStore.users.values()).map(u => {
-    const { passwordHash: _, ...safe } = u;
-    return safe;
-  });
-  res.json(usersList);
-});
-
-app.patch('/api/admin/users/:id/role', authenticate, requireRole('ADMIN'), (req, res) => {
-  const user = dbStore.users.get(req.params.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  const { role } = req.body;
-  if (!VALID_ROLES.includes(role)) {
-    return res.status(400).json({ error: 'Invalid role' });
-  }
-
-  // Stop an admin from locking themselves out
-  const currentUser = (req as any).user;
-  if (currentUser && currentUser.id === user.id && role !== 'ADMIN') {
-    return res.status(400).json({ error: 'You cannot remove your own admin role' });
-  }
-
-  user.role = role;
-  user.updatedAt = new Date().toISOString();
-  dbStore.users.set(user.id, user);
-  neon('User Role', 'UPDATE users SET role=$1 WHERE id=$2', [role, user.id]);
-  logAudit(req, 'CHANGE_USER_ROLE', 'user', user.id, `Set ${user.email} role to ${role}`);
-
-  const { passwordHash: _, ...safe } = user;
-  res.json(safe);
-});
-
-app.patch('/api/admin/users/:id/toggle-status', authenticate, requireRole('ADMIN'), (req, res) => {
-  const user = dbStore.users.get(req.params.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  const currentUser = (req as any).user;
-  if (currentUser && currentUser.id === user.id) {
-    return res.status(400).json({ error: 'You cannot suspend your own account' });
-  }
-
-  user.isActive = !user.isActive;
-  dbStore.users.set(user.id, user);
-  neon('User Status', 'UPDATE users SET is_active=$1 WHERE id=$2', [user.isActive, user.id]);
-  logAudit(req, 'TOGGLE_USER_STATUS', 'user', user.id, `${user.email} is now ${user.isActive ? 'active' : 'suspended'}`);
-
-  const { passwordHash: _, ...safe } = user;
-  res.json(safe);
-});
-
-app.put('/api/admin/users/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const user = dbStore.users.get(req.params.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  const { fullName, phone, role, division, district, upazila } = req.body;
-  if (role && !VALID_ROLES.includes(role)) {
-    return res.status(400).json({ error: 'Invalid role' });
-  }
-  if (fullName) user.fullName = fullName;
-  if (phone) user.phone = phone;
-  if (role) user.role = role;
-  if (division) user.division = division;
-  if (district) user.district = district;
-  if (upazila !== undefined) user.upazila = upazila;
-  user.updatedAt = new Date().toISOString();
-
-  dbStore.users.set(user.id, user);
-  neon(
-    'User Update',
-    `UPDATE users SET full_name=$1, phone=$2, role=$3, division=$4, district=$5, upazila=$6, updated_at=NOW() WHERE id=$7`,
-    [user.fullName, user.phone, user.role, user.division, user.district, user.upazila, user.id]
-  );
-  const { passwordHash: _, ...safe } = user;
-  res.json(safe);
-});
-
-app.delete('/api/admin/users/:id', authenticate, requireRole('ADMIN'), (req, res) => {
-  const user = dbStore.users.get(req.params.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  // Prevent deleting current logged in admin
-  const currentUser = (req as any).user;
-  if (currentUser && currentUser.id === user.id) {
-    return res.status(400).json({ error: 'You cannot delete your own admin account' });
-  }
-
-  dbStore.users.delete(user.id);
-  neon('User Delete', 'DELETE FROM users WHERE id=$1', [user.id]);
-  logAudit(req, 'DELETE_USER', 'user', user.id, `Deleted user ${user.email}`);
-  res.json({ success: true, message: 'User deleted successfully' });
-});
-
-// Database Management Endpoints
-app.post('/api/admin/database/connect', authenticate, requireRole('ADMIN'), async (req, res) => {
-  const { connectionString } = req.body;
-  if (!connectionString) {
-    return res.status(400).json({ error: 'Neon connection string is required' });
-  }
-
-  const result = await postgresService.connect(connectionString.trim());
-  if (result.success) {
-    // Sync users currently in memory to Neon (valid UUID accounts with a password only)
-    for (const u of dbStore.users.values()) {
-      if (!isUuid(u.id) || !u.passwordHash) continue;
-      await saveUserToNeon(u);
-    }
-    logAudit(req, 'CONNECT_DATABASE', 'database', undefined, 'Connected Neon PostgreSQL');
-  }
-
-  res.json({
-    ...result,
-    status: postgresService.getStatus()
-  });
-});
-
-app.get('/api/admin/database/sql-script', authenticate, requireRole('ADMIN'), (req, res) => {
-  res.json({
-    sql: postgresService.getNeonSqlScript()
-  });
-});
-
-app.get('/api/admin/database/table-counts', authenticate, requireRole('ADMIN'), async (req, res) => {
-  const counts = await postgresService.getTableCounts();
-  res.json({
-    counts,
-    status: postgresService.getStatus()
-  });
-});
-
-app.post('/api/admin/database/sync-all', authenticate, requireRole('ADMIN'), async (req, res) => {
-  if (!postgresService.isConnected) {
-    return res.status(400).json({ error: 'Neon database is not connected. Connect Neon first.' });
-  }
-
-  try {
-    let failed = 0;
-    const track = async (p: Promise<any | null>) => {
-      const r = await p;
-      if (!r) failed += 1;
-    };
-
-    // Order matters because of foreign keys
-    for (const u of dbStore.users.values()) {
-      if (!isUuid(u.id) || !u.passwordHash) continue;
-      await track(saveUserToNeon(u));
-    }
-    for (const c of dbStore.campaigns.values()) await track(saveCampaignToNeon(c));
-    for (const d of dbStore.bloodDonors.values()) await track(saveBloodDonorToNeon(d));
-    for (const r of dbStore.bloodRequests.values()) await track(saveBloodRequestToNeon(r));
-    for (const v of dbStore.volunteers.values()) await track(saveVolunteerToNeon(v));
-    for (const b of dbStore.beneficiaries.values()) await track(saveBeneficiaryToNeon(b));
-    for (const p of dbStore.blogPosts.values()) await track(saveBlogToNeon(p));
-    for (const g of dbStore.galleryItems.values()) await track(saveGalleryToNeon(g));
-    for (const m of dbStore.contactMessages.values()) await track(saveContactToNeon(m));
-    for (const d of dbStore.donations.values()) await track(saveDonationToNeon(d));
-
-    const counts = await postgresService.getTableCounts();
-    logAudit(req, 'SYNC_ALL', 'database', undefined, `Synced memory to Neon (${failed} failed)`);
-
-    res.json({
-      success: true,
-      message:
-        failed === 0
-          ? 'All in-memory records synced to Neon cloud successfully!'
-          : `Sync finished, but ${failed} record(s) failed. Check the server terminal for details.`,
-      counts
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: `Sync failed: ${err.message}` });
-  }
-});
-
-app.get('/api/admin/audit-logs', authenticate, requireRole('ADMIN'), (req, res) => {
-  res.json(Array.from(dbStore.auditLogs.values()).reverse());
-});
-
-app.post('/api/admin/clear-data', authenticate, requireRole('ADMIN'), (req, res) => {
-  dbStore.clearAllRecords();
-  res.json({ success: true, message: 'All demo data cleared. Database is completely fresh.' });
-});
-
-app.post('/api/admin/seed-data', authenticate, requireRole('ADMIN'), (req, res) => {
-  dbStore.seedSampleRecords();
-  res.json({ success: true, message: 'Starter data populated.' });
-});
-
-// ============================================================
-// AI Assistant API ("Ask HopeCare AI")
+// AI Assistant API
 // ============================================================
 app.post('/api/ai/chat', async (req, res) => {
   try {
-    const { message, context } = req.body;
+    const { message } = req.body;
     const answer = await aiService.askAssistant(message || '', {
       campaigns: Array.from(dbStore.campaigns.values()),
       bloodDonors: Array.from(dbStore.bloodDonors.values()),
@@ -1654,211 +969,14 @@ app.post('/api/ai/chat', async (req, res) => {
     });
     res.json({ reply: answer });
   } catch (error: any) {
-    console.error('AI chat error:', error);
     res.status(500).json({ error: 'AI Assistant temporarily unavailable' });
   }
 });
 
 // ============================================================
-// Load saved data from Neon into memory on server start
-// (a table is only loaded when Neon actually has rows for it)
+// Neon Database Initialization
 // ============================================================
-async function loadFromNeon(label: string, sql: string, target: Map<string, any>, mapper: (row: any) => any) {
-  const res = await neon(`Load ${label}`, sql);
-  if (res && res.rows && res.rows.length > 0) {
-    target.clear();
-    for (const row of res.rows) {
-      const item = mapper(row);
-      target.set(item.id, item);
-    }
-    console.log(`[Neon Postgres] Loaded ${res.rows.length} ${label} from Neon.`);
-  }
-}
-
-async function syncFromNeon() {
-  if (!postgresService.isConnected) return;
-
-  // Users (merged, so memory accounts are not lost)
-  const usersRes = await neon('Load users', 'SELECT * FROM users');
-  if (usersRes && usersRes.rows && usersRes.rows.length > 0) {
-    for (const row of usersRes.rows) {
-      dbStore.users.set(row.id, rowToUser(row));
-    }
-    console.log(`[Neon Postgres] Initialized ${usersRes.rows.length} users from Neon.`);
-  }
-
-  await loadFromNeon('campaigns', 'SELECT * FROM campaigns ORDER BY created_at', dbStore.campaigns, (r) => ({
-    id: r.id,
-    title: r.title,
-    slug: r.slug,
-    category: r.category,
-    shortDescription: r.short_description,
-    fullDescription: r.full_description,
-    targetAmount: Number(r.target_amount),
-    collectedAmount: Number(r.collected_amount || 0),
-    donorCount: Number(r.donor_count || 0),
-    featuredImageUrl: r.featured_image_url,
-    galleryImages: Array.isArray(r.gallery_images) ? r.gallery_images : [],
-    status: r.status,
-    deadline: toDateStr(r.deadline),
-    organizerName: r.organizer_name,
-    beneficiarySummary: r.beneficiary_summary || undefined,
-    isUrgent: Boolean(r.is_urgent),
-    createdAt: toIso(r.created_at),
-    updatedAt: toIso(r.updated_at)
-  }));
-
-  await loadFromNeon('donations', 'SELECT * FROM donations ORDER BY created_at', dbStore.donations, (r) => ({
-    id: r.id,
-    campaignId: r.campaign_id,
-    campaignTitle: dbStore.campaigns.get(r.campaign_id)?.title || '',
-    userId: r.user_id || undefined,
-    donorName: r.donor_name,
-    donorEmail: r.donor_email,
-    donorPhone: r.donor_phone,
-    amount: Number(r.amount),
-    isAnonymous: Boolean(r.is_anonymous),
-    message: r.message || '',
-    paymentGateway: r.payment_gateway,
-    paymentStatus: r.payment_status,
-    transactionId: r.transaction_id,
-    receiptNumber: r.receipt_number,
-    createdAt: toIso(r.created_at)
-  }));
-
-  await loadFromNeon('blood donors', 'SELECT * FROM blood_donors ORDER BY created_at', dbStore.bloodDonors, (r) => ({
-    id: r.id,
-    userId: r.user_id || undefined,
-    fullName: r.full_name,
-    bloodGroup: r.blood_group,
-    phone: r.phone,
-    email: r.email || '',
-    division: r.division,
-    district: r.district,
-    upazila: r.upazila || '',
-    addressArea: r.address_area,
-    gender: r.gender,
-    dateOfBirth: toDateStr(r.date_of_birth),
-    lastDonationDate: r.last_donation_date ? toDateStr(r.last_donation_date) : undefined,
-    isAvailable: Boolean(r.is_available),
-    emergencyContactPreference: r.emergency_contact_preference,
-    totalDonationCount: Number(r.total_donation_count || 0),
-    status: r.status,
-    createdAt: toIso(r.created_at)
-  }));
-
-  await loadFromNeon('blood requests', 'SELECT * FROM blood_requests ORDER BY created_at', dbStore.bloodRequests, (r) => ({
-    id: r.id,
-    userId: r.user_id || undefined,
-    patientName: r.patient_name,
-    bloodGroup: r.blood_group,
-    requiredUnits: Number(r.required_units),
-    hospitalName: r.hospital_name,
-    hospitalAddress: r.hospital_address,
-    division: r.division,
-    district: r.district,
-    upazila: r.upazila || '',
-    requiredDate: r.required_date,
-    requiredTime: r.required_time,
-    emergencyLevel: r.emergency_level,
-    contactPerson: r.contact_person,
-    contactPhone: r.contact_phone,
-    patientCondition: r.patient_condition,
-    additionalInfo: r.additional_info || '',
-    status: r.status,
-    matchedDonorsCount: Number(r.matched_donors_count || 0),
-    createdAt: toIso(r.created_at)
-  }));
-
-  await loadFromNeon('volunteers', 'SELECT * FROM volunteers ORDER BY created_at', dbStore.volunteers, (r) => ({
-    id: r.id,
-    userId: r.user_id || undefined,
-    fullName: r.full_name,
-    email: r.email,
-    phone: r.phone,
-    division: r.division,
-    district: r.district,
-    upazila: r.upazila || '',
-    skills: Array.isArray(r.skills) ? r.skills : [],
-    availability: r.availability,
-    motivation: r.motivation,
-    preferredActivities: Array.isArray(r.preferred_activities) ? r.preferred_activities : [],
-    status: r.status,
-    assignedTasksCount: Number(r.assigned_tasks_count || 0),
-    createdAt: toIso(r.created_at)
-  }));
-
-  await loadFromNeon('beneficiaries', 'SELECT * FROM beneficiaries ORDER BY created_at', dbStore.beneficiaries, (r) => ({
-    id: r.id,
-    name: r.name,
-    photoUrl: r.photo_url,
-    location: r.location,
-    category: r.category,
-    story: r.story,
-    supportRequired: Number(r.support_required || 0),
-    supportReceived: Number(r.support_received || 0),
-    campaignId: r.campaign_id || undefined,
-    status: r.status,
-    createdAt: toIso(r.created_at)
-  }));
-
-  await loadFromNeon('blog posts', 'SELECT * FROM blog_posts ORDER BY created_at', dbStore.blogPosts, (r) => ({
-    id: r.id,
-    title: r.title,
-    slug: r.slug,
-    coverImage: r.cover_image,
-    content: r.content,
-    excerpt: r.excerpt,
-    author: r.author,
-    category: r.category,
-    tags: Array.isArray(r.tags) ? r.tags : [],
-    publishedDate: toDateStr(r.published_date),
-    status: r.status,
-    readTimeMinutes: Number(r.read_time_minutes || 4)
-  }));
-
-  await loadFromNeon('gallery items', 'SELECT * FROM gallery_items ORDER BY created_at', dbStore.galleryItems, (r) => ({
-    id: r.id,
-    title: r.title,
-    description: r.description || '',
-    imageUrl: r.image_url,
-    category: r.category,
-    campaignId: r.campaign_id || undefined,
-    date: toDateStr(r.date),
-    location: 'Bangladesh'
-  }));
-
-  await loadFromNeon('contact messages', 'SELECT * FROM contact_messages ORDER BY created_at', dbStore.contactMessages, (r) => ({
-    id: r.id,
-    name: r.name,
-    email: r.email,
-    phone: r.phone || '',
-    subject: r.subject,
-    message: r.message,
-    isRead: Boolean(r.is_read),
-    replyStatus: r.reply_status,
-    createdAt: toIso(r.created_at)
-  }));
-
-  await loadFromNeon('audit logs', 'SELECT * FROM audit_logs ORDER BY created_at', dbStore.auditLogs, (r) => ({
-    id: r.id,
-    adminId: r.admin_id,
-    adminName: r.admin_name,
-    action: r.action,
-    entity: r.entity,
-    entityId: r.entity_id || undefined,
-    details: r.details,
-    ipAddress: r.ip_address || undefined,
-    timestamp: toIso(r.created_at),
-    createdAt: toIso(r.created_at)
-  }));
-}
-
-// ============================================================
-// Vite Middleware / Static serving setup
-// ============================================================
-async function startServer() {
-  // Auto-connect to Neon when DATABASE_URL is set in .env
+async function initNeon() {
   if (process.env.DATABASE_URL && !postgresService.isConnected) {
     try {
       const result = await postgresService.connect(process.env.DATABASE_URL.trim());
@@ -1867,28 +985,37 @@ async function startServer() {
       console.warn('[Neon Postgres] Auto-connect failed:', err.message);
     }
   }
-
-  // Sync initial data from Neon if connected
-  await syncFromNeon();
-
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    app.use(express.static(path.resolve(__dirname, 'dist')));
-    app.get('*', (req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
-    });
-  }
-
-  app.listen(PORT, 'localhost', () => {
-    console.log(`HopeCare Foundation Server running on http://localhost:${PORT}`);
-  });
 }
 
-startServer();
+// Connect Neon in background
+initNeon();
+
+// ============================================================
+// Standalone Server (Local Development Only)
+// Vercel-এ app.listen() কল করা যাবে না
+// ============================================================
+if (!process.env.VERCEL) {
+  import('vite').then(({ createServer: createViteServer }) => {
+    if (process.env.NODE_ENV !== 'production') {
+      createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      }).then((vite) => {
+        app.use(vite.middlewares);
+        app.listen(PORT, 'localhost', () => {
+          console.log(`Server running on http://localhost:${PORT}`);
+        });
+      });
+    } else {
+      app.use(express.static(path.resolve(__dirname, 'dist')));
+      app.get('*', (req, res) => {
+        res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      });
+      app.listen(PORT, 'localhost', () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    }
+  });
+}
 
 export default app;
