@@ -201,7 +201,7 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
 
             <div className="space-y-0.5">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                HopeCare <span className="text-blue-600">Foundation</span>
+                Shohayota<span className="text-blue-600">Foundation</span>
               </h1>
               <p className="text-xs font-semibold text-slate-600">
                 মানবিক সহায়তা ও জরুরি রক্তদান প্ল্যাটফর্ম • Bangladesh Gateway
