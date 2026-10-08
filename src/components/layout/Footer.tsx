@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Heart, Droplet, Phone, Mail, MapPin, ShieldCheck } from 'lucide-react';
+import { Heart, Droplet, Phone, MessageCircle, Mail, MapPin, ShieldCheck } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const { setCurrentPage, openDonateModal, openBloodRequestModal, openVolunteerModal } = useApp();
@@ -113,12 +113,25 @@ export const Footer: React.FC = () => {
                 <MapPin className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                 <span>House 42, Road 11/A, Dhanmondi, Dhaka-1209, Bangladesh</span>
               </li>
+
               <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
-                <a href="tel:" className="text-emerald-700 font-bold hover:underline">
-                  
-                </a>
-              </li>
+                  <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-emerald-700 font-bold">
+                      +8801934201151
+                    </span>
+                </li>
+
+                <li className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <a 
+                    href="https://wa.me/8801934201151" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-emerald-700 font-bold hover:underline"
+                  >
+                    Inbox us on WhatsApp for any queries
+                  </a>
+                </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-amber-500 shrink-0" />
                 <span>contact@hopecare.org</span>

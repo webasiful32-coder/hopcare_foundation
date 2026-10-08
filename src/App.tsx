@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Navbar } from './components/layout/Navbar';
@@ -15,6 +15,7 @@ import { ContactPage } from './components/pages/ContactPage';
 import { LegalPage } from './components/pages/LegalPage';
 import { UserDashboard } from './components/dashboard/UserDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { MotionAuthPage } from './components/auth/MotionAuthPage';
 
 import { DonateModal } from './components/common/DonateModal';
 import { ReceiptModal } from './components/common/ReceiptModal';
@@ -25,7 +26,25 @@ import { HopeCareAiDrawer } from './components/ai/HopeCareAiDrawer';
 import { ToastContainer } from './components/common/ToastContainer';
 
 const MainContent: React.FC = () => {
-  const { currentPage } = useApp();
+  const { user, currentPage, setCurrentPage } = useApp();
+  const [guestBypassed, setGuestBypassed] = useState(false);
+
+  // If visitor is not logged in and hasn't chosen guest browsing, show MotionAuthPage
+  const showAuthPortal = currentPage === 'auth' || (!user && !guestBypassed);
+
+  if (showAuthPortal) {
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans">
+        <MotionAuthPage
+          onBypassToSite={() => {
+            setGuestBypassed(true);
+            setCurrentPage('home');
+          }}
+        />
+        <ToastContainer />
+      </div>
+    );
+  }
 
   const renderPage = () => {
     switch (currentPage) {

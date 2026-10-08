@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const UserDashboard: React.FC = () => {
-  const { user, openReceiptModal, addToast, openDonateModal, openBloodRequestModal } = useApp();
+  const { user, openReceiptModal, addToast, openDonateModal, openBloodRequestModal, setCurrentPage } = useApp();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'donations' | 'blood' | 'requests' | 'messages' | 'settings'>('overview');
 
@@ -139,6 +139,20 @@ export const UserDashboard: React.FC = () => {
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <button
+            onClick={() => setCurrentPage('home')}
+            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs border border-slate-300 flex items-center justify-center gap-1.5 transition cursor-pointer"
+          >
+            <span>← হোম পেজ (Home)</span>
+          </button>
+          <button
+            onClick={() => setCurrentPage('admin')}
+            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-purple-600/30 flex items-center justify-center gap-1.5 transition cursor-pointer"
+            title="সব CRUD অপারেশন পরিচালনা করতে অ্যাডমিন প্যানেলে যান"
+          >
+            <Shield className="w-4 h-4" />
+            <span>অ্যাডমিন প্যানেল (CRUD) →</span>
+          </button>
+          <button
             onClick={() => openDonateModal()}
             className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs transition"
           >
@@ -181,6 +195,27 @@ export const UserDashboard: React.FC = () => {
       {/* TAB CONTENT: Overview */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* Admin / CRUD Access Banner */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-purple-500/30">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 shrink-0">
+                <Shield className="w-6 h-6 text-purple-300" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base text-white">অ্যাডমিন ড্যাশবোর্ড ও সব CRUD অপারেশন</h3>
+                <p className="text-xs text-purple-200 mt-0.5">
+                  ক্যাম্পেইন তৈরি/এডিট/ডিলিট, রক্তদাতা ব্যবস্থাপনা, ডোনেশন রেকর্ড এবং Neon ডেটাবেস কন্ট্রোল করুন।
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setCurrentPage('admin')}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-xs shadow-md transition whitespace-nowrap cursor-pointer shrink-0"
+            >
+              অ্যাডমিন প্যানেলে যান (Admin Dashboard) →
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
               <span className="text-xs text-slate-500 font-medium">Total Donated</span>
