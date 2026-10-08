@@ -17,7 +17,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Settings,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  Search,
+  X
 } from 'lucide-react';
 
 export const UserDashboard: React.FC = () => {
@@ -32,6 +35,11 @@ export const UserDashboard: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [msgInput, setMsgInput] = useState('');
 
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [publicUsers, setPublicUsers] = useState<any[]>([]);
+  const [searchUser, setSearchUser] = useState('');
+
+
   // Blood profile state
   const [isDonorActive, setIsDonorActive] = useState(user?.isBloodDonor || false);
   const [donorBloodGroup, setDonorBloodGroup] = useState<BloodGroup>('O+');
@@ -40,6 +48,39 @@ export const UserDashboard: React.FC = () => {
   // Settings state
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [phone, setPhone] = useState(user?.phone || '');
+
+
+  useEffect(() => {
+    if (showNewChat) {
+      safeFetchJson<any[]>('/api/users/public')
+        .then(res => {
+          if (res.ok && res.data) setPublicUsers(res.data);
+        })
+        .catch(() => {});
+    }
+  }, [showNewChat]);
+
+  const startNewChat = async (recipientId: string) => {
+    try {
+      const res = await fetch('/api/chat/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('hopecare_token')}`
+        },
+        body: JSON.stringify({ recipientId })
+      });
+      const conv = await res.json();
+      if (!conversations.find(c => c.id === conv.id)) {
+        setConversations(prev => [conv, ...prev]);
+      }
+      setActiveConv(conv);
+      setShowNewChat(false);
+    } catch {
+      addToast('Error starting chat', 'error');
+    }
+  };
+
 
   useEffect(() => {
     // Fetch user donations
@@ -74,8 +115,9 @@ export const UserDashboard: React.FC = () => {
       })
       .catch(() => {});
 
+    
     // Fetch chat conversations
-    fetch('/api/chat/conversations')
+    fetch('/api/chat/conversations', { headers: { 'Authorization': `Bearer ${localStorage.getItem('hopecare_token')}` } })
       .then((r) => r.json())
       .then((data: Conversation[]) => {
         setConversations(data);
@@ -88,7 +130,7 @@ export const UserDashboard: React.FC = () => {
 
   useEffect(() => {
     if (activeConv) {
-      fetch(`/api/chat/messages/${activeConv.id}`)
+      fetch(`/api/chat/messages/${activeConv.id}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('hopecare_token')}` } })
         .then((r) => r.json())
         .then((data) => setMessages(data))
         .catch(() => {});
@@ -102,7 +144,7 @@ export const UserDashboard: React.FC = () => {
     try {
       const res = await fetch('/api/chat/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('hopecare_token')}` },
         body: JSON.stringify({
           conversationId: activeConv.id,
           senderId: user?.id || 'anon',
@@ -430,10 +472,20 @@ export const UserDashboard: React.FC = () => {
 
       {/* TAB CONTENT: Messages */}
       {activeTab === 'messages' && (
-        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs h-[550px] flex flex-col md:flex-row">
+        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs min-h-[500px] md:h-[600px] flex flex-col md:flex-row">
           {/* Conversation List */}
           <div className="w-full md:w-72 border-r border-slate-200 p-4 space-y-2 overflow-y-auto">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Conversations</h4>
+            
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Conversations</h4>
+              <button 
+                onClick={() => setShowNewChat(true)}
+                className="w-6 h-6 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center hover:bg-sky-200 transition"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
             {conversations.map((c) => (
               <div
                 key={c.id}
@@ -537,6 +589,49 @@ export const UserDashboard: React.FC = () => {
           </form>
         </div>
       )}
+
+      {/* New Chat Modal */}
+      {showNewChat && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <h3 className="font-bold text-slate-900">Start New Chat</h3>
+              <button onClick={() => setShowNewChat(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 border-b border-slate-100">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchUser}
+                  onChange={e => setSearchUser(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-hidden focus:border-sky-300"
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {publicUsers.filter(u => u.fullName.toLowerCase().includes(searchUser.toLowerCase())).map(u => (
+                <div key={u.id} onClick={() => startNewChat(u.id)} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl cursor-pointer transition border border-transparent hover:border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-slate-200 flex flex-shrink-0 items-center justify-center text-slate-500 font-bold overflow-hidden">
+                    {u.avatarUrl ? <img src={u.avatarUrl} alt={u.fullName} className="w-full h-full object-cover" /> : u.fullName.charAt(0)}
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-slate-900 text-sm">{u.fullName}</h5>
+                    <p className="text-[10px] text-slate-500">{u.role}</p>
+                  </div>
+                </div>
+              ))}
+              {publicUsers.length === 0 && (
+                <p className="text-center text-slate-400 text-xs py-10">No users found.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

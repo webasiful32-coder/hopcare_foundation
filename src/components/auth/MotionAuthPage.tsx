@@ -125,7 +125,7 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
   };
 
   return (
-    <div className="h-screen w-full relative flex items-center justify-center p-3 sm:p-5 overflow-hidden bg-gradient-to-br from-slate-100 via-sky-50/70 to-indigo-100/60 font-sans selection:bg-blue-600 selection:text-white">
+    <div className="min-h-[100dvh] w-full relative flex items-start sm:items-center justify-center p-3 sm:p-5 overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-100 via-sky-50/70 to-indigo-100/60 font-sans selection:bg-blue-600 selection:text-white py-8 sm:py-0">
       {/* Background Animated Floating Gradient Orbs */}
       <motion.div
         animate={{

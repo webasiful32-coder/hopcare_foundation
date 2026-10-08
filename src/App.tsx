@@ -80,7 +80,7 @@ const MainContent: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50/50 via-white to-blue-50/30 text-slate-800 font-sans selection:bg-sky-500 selection:text-white">
       <Navbar />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-x-hidden w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPage}

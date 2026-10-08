@@ -875,7 +875,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Navigation Tabs Bar */}
-      <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-3">
         {[
           { id: 'metrics', label: 'Overview Analytics', icon: TrendingUp },
           { id: 'campaigns', label: 'Campaigns', icon: Heart, badge: campaignsList.length },
@@ -892,7 +892,7 @@ export const AdminDashboard: React.FC = () => {
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id as any)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
               activeTab === t.id
                 ? t.isHighlight
                   ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/20'
@@ -903,10 +903,11 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             <t.icon className="w-3.5 h-3.5" />
-            <span>{t.label}</span>
+            <span className="hidden sm:inline">{t.label}</span>
+            <span className="sm:hidden">{t.label.split(' ')[0]}</span>
             {t.badge !== undefined && (
               <span
-                className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] ${
+                className={`px-1.5 rounded-full text-[10px] leading-5 ${
                   activeTab === t.id ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-700'
                 }`}
               >
@@ -916,6 +917,9 @@ export const AdminDashboard: React.FC = () => {
           </button>
         ))}
       </div>
+
+
+
 
       {/* ========================================================= */}
       {/* TAB: OVERVIEW METRICS */}

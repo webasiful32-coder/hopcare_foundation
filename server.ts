@@ -1282,16 +1282,63 @@ app.get('/api/contact', authenticate, requireRole('ADMIN'), (req, res) => {
 // ============================================================
 // Chat API
 // ============================================================
-app.get('/api/chat/conversations', (req, res) => {
-  res.json(Array.from(dbStore.conversations.values()));
+
+app.get('/api/users/public', authenticate, (req, res) => {
+  const usersList = Array.from(dbStore.users.values()).map(u => ({
+    id: u.id,
+    fullName: u.fullName,
+    avatarUrl: u.avatarUrl,
+    role: u.role
+  })).filter(u => u.id !== (req as any).user.id);
+  res.json(usersList);
 });
 
-app.get('/api/chat/messages/:convId', (req, res) => {
+app.get('/api/chat/conversations', authenticate, (req, res) => {
+  const myId = (req as any).user.id;
+  const myConvs = Array.from(dbStore.conversations.values()).filter(c => c.participants.some(p => p.id === myId));
+  res.json(myConvs);
+});
+
+
+app.post('/api/chat/conversations', authenticate, (req, res) => {
+  const myId = (req as any).user.id;
+  const { recipientId } = req.body;
+  if (!recipientId) return res.status(400).json({ error: 'recipientId is required' });
+
+  const recipient = dbStore.users.get(recipientId);
+  if (!recipient) return res.status(404).json({ error: 'User not found' });
+
+  // Check if conversation already exists
+  const existing = Array.from(dbStore.conversations.values()).find(
+    c => c.participants.some(p => p.id === myId) && c.participants.some(p => p.id === recipientId)
+  );
+  
+  if (existing) {
+    return res.json(existing);
+  }
+
+  const newConv = {
+    id: 'conv-' + Date.now(),
+    participants: [
+      { id: myId, name: (req as any).user.fullName, role: (req as any).user.role },
+      { id: recipient.id, name: recipient.fullName, role: recipient.role }
+    ],
+    subject: `Chat with ${recipient.fullName}`,
+    lastMessage: 'Conversation started',
+    lastMessageTime: new Date().toISOString(),
+    unreadCount: 0
+  };
+
+  dbStore.conversations.set(newConv.id, newConv);
+  res.status(201).json(newConv);
+});
+
+app.get('/api/chat/messages/:convId', authenticate, (req, res) => {
   const list = Array.from(dbStore.messages.values()).filter(m => m.conversationId === req.params.convId);
   res.json(list);
 });
 
-app.post('/api/chat/messages', (req, res) => {
+app.post('/api/chat/messages', authenticate, (req, res) => {
   const { conversationId, senderId, senderName, senderRole, text } = req.body;
   if (!conversationId || !text) {
     return res.status(400).json({ error: 'Conversation and text are required' });

@@ -21,7 +21,7 @@ export const ReceiptModal: React.FC = () => {
   return (
     <AnimatePresence>
       {receiptData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-indigo-950/40 backdrop-blur-md overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 bg-indigo-950/40 backdrop-blur-md overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -105,7 +105,7 @@ export const ReceiptModal: React.FC = () => {
           </div>
 
           {/* Financial Breakdown */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden">
+          <div className="border border-slate-200 rounded-xl overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-100 text-slate-600 uppercase font-semibold">
                 <tr>
