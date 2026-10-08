@@ -166,13 +166,89 @@ export const MotionAuthPage: React.FC<MotionAuthPageProps> = ({ onBypassToSite, 
         {/* Top Header & Branding */}
         <div>
           <div className="flex flex-col items-center text-center space-y-2 mb-3">
-            <motion.div
-              whileHover={{ scale: 1.05, rotate: 3 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30"
-            >
-              <Heart className="w-6 h-6 fill-white/90" />
-            </motion.div>
+            {/* LOGO */}
+                <div className="relative shrink-0">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.85, y: -8 }}
+                    animate={{
+                      opacity: 1,
+                      scale: 1,
+                      y: [0, -2, 0],
+                    }}
+                    transition={{
+                      opacity: { duration: 0.5 },
+                      scale: { duration: 0.5, ease: 'easeOut' },
+                      y: {
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      },
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    className="
+                      relative
+                      w-10
+                      h-10
+                      sm:w-12
+                      sm:h-12
+                      2xl:w-14
+                      2xl:h-14
+                      shrink-0
+                      rounded-2xl
+                      overflow-hidden
+                      bg-white
+                      shadow-lg
+                      shadow-teal-500/20
+                      ring-1
+                      ring-emerald-100
+                      cursor-pointer
+                    "
+                  >
+                    <img
+                      src="/logo.png"
+                      alt="Shohayota Foundation"
+                      className="
+                        w-full
+                        h-full
+                        object-contain
+                        p-0.5
+                      "
+                    />
+
+                    {/* Small live indicator */}
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.4, duration: 0.3 }}
+                      className="
+                        absolute
+                        right-0
+                        bottom-0
+                        w-3
+                        h-3
+                        sm:w-3.5
+                        sm:h-3.5
+                        rounded-full
+                        bg-white
+                        flex
+                        items-center
+                        justify-center
+                        shadow-md
+                      "
+                    >
+                      <span
+                        className="
+                          w-2
+                          h-2
+                          sm:w-2.5
+                          sm:h-2.5
+                          rounded-full
+                          bg-rose-500
+                        "
+                      />
+                    </motion.span>
+                  </motion.div>
+                </div>
 
             <div className="space-y-0.5">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
