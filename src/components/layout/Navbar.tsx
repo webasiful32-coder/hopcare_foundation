@@ -169,8 +169,8 @@ export const Navbar: React.FC = () => {
           MAIN NAVBAR (Header Content)
       ====================================================== */}
       <div className="w-full max-w-full">
-        <div className="w-full max-w-[1440px] mx-auto px-2.5 sm:px-5 lg:px-8">
-          <div className="min-h-[64px] sm:min-h-[74px] lg:min-h-[82px] flex items-center justify-between gap-1.5 sm:gap-3 xl:gap-4 min-w-0">
+        <div className="w-full max-w-[1440px] mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="min-h-[62px] sm:min-h-[74px] lg:min-h-[82px] flex items-center justify-between gap-1.5 sm:gap-3 xl:gap-4 min-w-0">
 
             {/* =================================================
                 LOGO + BRAND TEXT
@@ -180,7 +180,7 @@ export const Navbar: React.FC = () => {
               className="
                 flex
                 items-center
-                gap-2
+                gap-1.5
                 sm:gap-2.5
                 shrink-0
                 min-w-0
@@ -189,93 +189,93 @@ export const Navbar: React.FC = () => {
                 group
               "
             >
-              {/* Logo Icon */}
-             {/* LOGO */}
-                <div className="relative shrink-0">
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.85, y: -8 }}
-                    animate={{
-                      opacity: 1,
-                      scale: 1,
-                      y: [0, -2, 0],
-                    }}
-                    transition={{
-                      opacity: { duration: 0.5 },
-                      scale: { duration: 0.5, ease: 'easeOut' },
-                      y: {
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      },
-                    }}
-                    whileHover={{ scale: 1.05 }}
+              {/* ANIMATED LOGO */}
+              <div className="relative shrink-0">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.85, y: -8 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: [0, -2, 0],
+                  }}
+                  transition={{
+                    opacity: { duration: 0.5 },
+                    scale: { duration: 0.5, ease: 'easeOut' },
+                    y: {
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    },
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  className="
+                    relative
+                    w-9
+                    h-9
+                    sm:w-12
+                    sm:h-12
+                    2xl:w-14
+                    2xl:h-14
+                    shrink-0
+                    rounded-2xl
+                    overflow-hidden
+                    bg-white
+                    shadow-md
+                    sm:shadow-lg
+                    shadow-teal-500/20
+                    ring-1
+                    ring-emerald-100
+                    cursor-pointer
+                  "
+                >
+                  <img
+                    src="/logo.png"
+                    alt="Shohayota Foundation"
                     className="
-                      relative
-                      w-10
-                      h-10
-                      sm:w-12
-                      sm:h-12
-                      2xl:w-14
-                      2xl:h-14
-                      shrink-0
-                      rounded-2xl
-                      overflow-hidden
+                      w-full
+                      h-full
+                      object-contain
+                      p-0.5
+                    "
+                  />
+
+                  {/* Small live indicator */}
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.4, duration: 0.3 }}
+                    className="
+                      absolute
+                      right-0
+                      bottom-0
+                      w-2.5
+                      h-2.5
+                      sm:w-3.5
+                      sm:h-3.5
+                      rounded-full
                       bg-white
-                      shadow-lg
-                      shadow-teal-500/20
-                      ring-1
-                      ring-emerald-100
-                      cursor-pointer
+                      flex
+                      items-center
+                      justify-center
+                      shadow-md
                     "
                   >
-                    <img
-                      src="/logo.png"
-                      alt="Shohayota Foundation"
+                    <span
                       className="
-                        w-full
-                        h-full
-                        object-contain
-                        p-0.5
+                        w-1.5
+                        h-1.5
+                        sm:w-2.5
+                        sm:h-2.5
+                        rounded-full
+                        bg-rose-500
                       "
                     />
+                  </motion.span>
+                </motion.div>
+              </div>
 
-                    {/* Small live indicator */}
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.4, duration: 0.3 }}
-                      className="
-                        absolute
-                        right-0
-                        bottom-0
-                        w-3
-                        h-3
-                        sm:w-3.5
-                        sm:h-3.5
-                        rounded-full
-                        bg-white
-                        flex
-                        items-center
-                        justify-center
-                        shadow-md
-                      "
-                    >
-                      <span
-                        className="
-                          w-2
-                          h-2
-                          sm:w-2.5
-                          sm:h-2.5
-                          rounded-full
-                          bg-rose-500
-                        "
-                      />
-                    </motion.span>
-                  </motion.div>
-                </div>
-
-              {/* Brand Text & Subtitle: All Screen Breakpoint Safe */}
-              <div className="min-w-0 max-w-[140px] sm:max-w-[220px] 2xl:max-w-none">
+              {/* Brand Text: মোবাইলে সুন্দরভাবে ফিট হবে */}
+              <div className="min-w-0 max-w-[110px] xs:max-w-[145px] sm:max-w-[220px] 2xl:max-w-none">
                 <div className="text-[13px] sm:text-[17px] xl:text-[18px] 2xl:text-[20px] font-extrabold tracking-tight text-slate-900 leading-tight truncate">
                   Shohayota Foundation
                 </div>
@@ -353,11 +353,11 @@ export const Navbar: React.FC = () => {
             </nav>
 
             {/* =================================================
-                RIGHT SIDE CONTROLS (Responsive)
+                RIGHT SIDE CONTROLS (Always leaves space for Hamburger)
             ================================================== */}
             <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto min-w-0">
 
-              {/* Notification Button */}
+              {/* 1. Notification Button */}
               <div className="relative shrink-0">
                 <button
                   onClick={() => {
@@ -369,8 +369,8 @@ export const Navbar: React.FC = () => {
                   }}
                   className="
                     relative
-                    w-9
-                    h-9
+                    w-8
+                    h-8
                     sm:w-10
                     sm:h-10
                     flex
@@ -392,12 +392,13 @@ export const Navbar: React.FC = () => {
                         absolute
                         top-0.5
                         right-0.5
-                        min-w-[16px]
-                        h-[16px]
-                        px-1
+                        min-w-[15px]
+                        h-[15px]
+                        px-0.5
                         bg-rose-500
                         text-white
-                        text-[9px]
+                        text-[8px]
+                        sm:text-[9px]
                         font-extrabold
                         rounded-full
                         flex
@@ -412,7 +413,7 @@ export const Navbar: React.FC = () => {
                   )}
                 </button>
 
-                {/* Notification Dropdown: মোবাইলে ফিক্সড ও ডেক্সটপে অ্যাবসলিউট */}
+                {/* Notification Dropdown */}
                 <AnimatePresence>
                   {isNotifOpen && (
                     <motion.div
@@ -519,7 +520,7 @@ export const Navbar: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {/* DIRECT ADMIN PANEL BUTTON (Desktop 1536px+) */}
+              {/* 2. Direct Admin Panel Button (Desktop 1536px+) */}
               {isAdmin && (
                 <button
                   onClick={() => handleNavClick('admin')}
@@ -553,7 +554,7 @@ export const Navbar: React.FC = () => {
                 </button>
               )}
 
-              {/* USER PROFILE BUTTON & MODAL */}
+              {/* 3. User Avatar Button */}
               {user ? (
                 <div className="relative shrink-0">
                   <button
@@ -564,9 +565,9 @@ export const Navbar: React.FC = () => {
                     className="
                       flex
                       items-center
-                      gap-1.5
+                      gap-1
                       sm:gap-2
-                      h-9
+                      h-8
                       sm:h-10
                       px-1.5
                       sm:px-2
@@ -620,7 +621,7 @@ export const Navbar: React.FC = () => {
                       </span>
                     </div>
 
-                    <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" />
+                    <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 hidden sm:block" />
                   </button>
 
                   <AnimatePresence>
@@ -736,7 +737,7 @@ export const Navbar: React.FC = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                /* SIGN IN (Desktop / Laptop) */
+                /* Sign in (Desktop) */
                 <button
                   onClick={() => handleNavClick('auth')}
                   className="
@@ -767,17 +768,19 @@ export const Navbar: React.FC = () => {
                 </button>
               )}
 
-              {/* DONATE BUTTON (Mobile & Desktop Clean Scaling) */}
+              {/* 4. Donate Button */}
               <button
                 onClick={() => openDonateModal()}
                 className="
-                  h-9
+                  h-8
                   sm:h-10
-                  px-2.5
+                  px-2
+                  xs:px-3
                   sm:px-4
                   2xl:px-5
                   rounded-xl
-                  text-[11px]
+                  text-[10px]
+                  xs:text-[11px]
                   sm:text-xs
                   font-extrabold
                   text-white
@@ -788,9 +791,8 @@ export const Navbar: React.FC = () => {
                   hover:from-cyan-700
                   hover:via-teal-700
                   hover:to-emerald-700
-                  shadow-md
-                  sm:shadow-lg
-                  shadow-teal-600/20
+                  shadow-sm
+                  sm:shadow-md
                   flex
                   items-center
                   justify-center
@@ -801,12 +803,11 @@ export const Navbar: React.FC = () => {
                   shrink-0
                 "
               >
-                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white shrink-0" />
-                <span className="hidden sm:inline">{t.donateNow}</span>
-                <span className="sm:hidden">Donate</span>
+                <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-white shrink-0" />
+                <span>Donate</span>
               </button>
 
-              {/* HAMBURGER BUTTON (Hidden on 1280px+ desktop) */}
+              {/* 5. HAMBURGER MENU BUTTON (সবসময় মোবাইলে দৃশ্যমান থাকবে) */}
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -815,8 +816,8 @@ export const Navbar: React.FC = () => {
                 }}
                 className="
                   xl:hidden
-                  w-9
-                  h-9
+                  w-8
+                  h-8
                   sm:w-10
                   sm:h-10
                   shrink-0
@@ -824,21 +825,20 @@ export const Navbar: React.FC = () => {
                   items-center
                   justify-center
                   rounded-xl
-                  text-slate-700
-                  bg-slate-50
-                  border
-                  border-slate-200
+                  text-slate-800
+                  bg-slate-100
                   hover:bg-teal-50
                   hover:text-teal-700
-                  hover:border-teal-200
+                  border
+                  border-slate-200
                   transition
                 "
                 aria-label="Toggle Navigation"
               >
                 {isMobileMenuOpen ? (
-                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <X className="w-4 h-4 sm:w-6 sm:h-6" />
                 ) : (
-                  <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <Menu className="w-4 h-4 sm:w-6 sm:h-6" />
                 )}
               </button>
 
@@ -906,16 +906,20 @@ export const Navbar: React.FC = () => {
                   sm:w-11
                   sm:h-11
                   rounded-xl
-                  bg-gradient-to-br
-                  from-cyan-500
-                  to-emerald-500
-                  flex
-                  items-center
-                  justify-center
+                  overflow-hidden
+                  bg-white
+                  p-0.5
+                  border
+                  border-emerald-100
+                  shadow-xs
                   shrink-0
                 "
               >
-                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-white" />
+                <img
+                  src="/logo.png"
+                  alt="Shohayota Foundation"
+                  className="w-full h-full object-contain"
+                />
               </div>
 
               <div className="min-w-0">
@@ -934,7 +938,7 @@ export const Navbar: React.FC = () => {
               </div>
             </div>
 
-            {/* Mobile Nav Links Grid (1 col on small phones, 2 col on tablets) */}
+            {/* Mobile Nav Links Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 min-w-0">
               {navLinks.map((link) => {
                 const isActive = currentPage === link.id;
@@ -1096,7 +1100,7 @@ export const Navbar: React.FC = () => {
               </button>
             </div>
 
-            {/* Language Switch for Mobile */}
+            {/* Language Switch */}
             <button
               onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
               className="
