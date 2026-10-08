@@ -14,7 +14,7 @@ const DEFAULT_ADMIN: User = {
   id: 'admin-seed-id-001',
   fullName: 'HopeCare Admin',
   email: 'admin@hopecare.org',
-  phone: '01712345678',
+  phone: '',
   role: 'ADMIN',
   division: 'Dhaka',
   district: 'Dhaka',
@@ -144,8 +144,12 @@ export async function registerUser(params: RegisterParams): Promise<AuthResult> 
   }
 
   // If server returned actual JSON error (e.g., status 400 with duplicate email), throw it
-  if (!result.isStaticOrHtml && result.data && (result.data as any).error) {
-    throw new Error((result.data as any).error);
+    if (!result.isStaticOrHtml && result.data && (result.data as any).error) {
+    const errData = (result.data as any).error;
+    const msg = typeof errData === 'string' 
+      ? errData 
+      : (errData.message || JSON.stringify(errData));
+    throw new Error(msg);
   }
 
   // Step 2: Handle static/Netlify or offline fallback seamlessly
