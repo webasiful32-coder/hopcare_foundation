@@ -80,19 +80,20 @@ const MainContent: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50/50 via-white to-blue-50/30 text-slate-800 font-sans selection:bg-sky-500 selection:text-white">
       <Navbar />
-      <main className="flex-1 overflow-x-hidden w-full">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPage}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.28, ease: 'easeInOut' }}
-          >
-            {renderPage()}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+      <main className="flex-1 w-full min-w-0 overflow-x-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPage}
+              className="w-full min-w-0 max-w-full"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.28, ease: 'easeInOut' }}
+            >
+              {renderPage()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
       <Footer />
 
       {/* Global Interactive Overlays */}

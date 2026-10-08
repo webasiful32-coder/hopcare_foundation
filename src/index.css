@@ -1,14 +1,220 @@
 @import "tailwindcss";
 
+/* =========================================================
+   GLOBAL RESPONSIVE / OVERFLOW SAFETY
+   ========================================================= */
+
 @layer base {
   html {
     scroll-behavior: smooth;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   body {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+
     background-color: #f8fafc;
     color: #1e293b;
+
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+
     overflow-x: hidden;
+    overflow-wrap: break-word;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  img {
+    display: block;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    max-width: 100%;
+    font: inherit;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  a {
+    max-width: 100%;
+  }
+}
+
+/* =========================================================
+   CONTAINER SAFETY
+   ========================================================= */
+
+main,
+section,
+article,
+header,
+footer,
+nav,
+div {
+  max-width: 100%;
+}
+
+/* Prevent long text / URLs from creating overflow */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+a {
+  overflow-wrap: anywhere;
+}
+
+/* But don't break important UI labels */
+button,
+nav button {
+  overflow-wrap: normal;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 639px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  main {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  section {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* =========================================================
+   LAPTOP
+   ========================================================= */
+
+@media (min-width: 1024px) and (max-width: 1535px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* =========================================================
+   EXTRA LARGE SCREEN
+   ========================================================= */
+
+@media (min-width: 1536px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* =========================================================
+   SAFE FLEX / GRID BEHAVIOR
+   ========================================================= */
+
+.flex,
+.grid {
+  min-width: 0;
+}
+
+/* Prevent flex children from forcing parent wider */
+.flex > *,
+.grid > * {
+  min-width: 0;
+}
+
+/* =========================================================
+   TABLE RESPONSIVE SAFETY
+   ========================================================= */
+
+table {
+  max-width: 100%;
+}
+
+.table-wrapper,
+.overflow-x-auto {
+  max-width: 100%;
+}
+
+/* =========================================================
+   FORM SAFETY
+   ========================================================= */
+
+input,
+textarea,
+select {
+  width: 100%;
+  min-width: 0;
+}
+
+/* =========================================================
+   MOBILE TOUCH SAFETY
+   ========================================================= */
+
+@media (max-width: 640px) {
+  button {
+    touch-action: manipulation;
   }
 }
