@@ -37,7 +37,7 @@ export const Navbar: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Admin check: accepts ADMIN, admin, Admin, or values containing ADMIN.
+  // Admin check
   const isAdmin = String(user?.role ?? '')
     .trim()
     .toUpperCase()
@@ -75,7 +75,7 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-[100] w-full max-w-full bg-white border-b border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.07)]">
 
       {/* =====================================================
-          EMERGENCY TOP BAR (All Devices Responsive)
+          EMERGENCY TOP BAR
       ====================================================== */}
       <div className="w-full max-w-full bg-[#991B45] bg-gradient-to-r from-[#991B45] via-[#B0184B] to-[#8F123C] text-white">
         <div className="w-full max-w-[1440px] mx-auto px-2.5 sm:px-5 lg:px-8">
@@ -103,7 +103,6 @@ export const Navbar: React.FC = () => {
 
             {/* RIGHT: BLOOD REQUEST & LANGUAGE */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Request Blood (Tablets & Desktop) */}
               <button
                 onClick={() => openBloodRequestModal()}
                 className="
@@ -130,7 +129,6 @@ export const Navbar: React.FC = () => {
                 Request Blood Immediately
               </button>
 
-              {/* Language Switcher */}
               <button
                 onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
                 className="
@@ -166,14 +164,14 @@ export const Navbar: React.FC = () => {
       </div>
 
       {/* =====================================================
-          MAIN NAVBAR (Header Content)
+          MAIN NAVBAR
       ====================================================== */}
       <div className="w-full max-w-full">
         <div className="w-full max-w-[1440px] mx-auto px-2 sm:px-4 lg:px-8">
           <div className="min-h-[62px] sm:min-h-[74px] lg:min-h-[82px] flex items-center justify-between gap-1.5 sm:gap-3 xl:gap-4 min-w-0">
 
             {/* =================================================
-                LOGO + BRAND TEXT
+                LOGO + FULL BRAND TEXT + বাংলা স্লোগান
             ================================================== */}
             <button
               onClick={() => handleNavClick('home')}
@@ -210,19 +208,19 @@ export const Navbar: React.FC = () => {
                   whileHover={{ scale: 1.05 }}
                   className="
                     relative
-                    w-9
-                    h-9
-                    sm:w-12
-                    sm:h-12
-                    2xl:w-14
-                    2xl:h-14
+                    w-8
+                    h-8
+                    sm:w-11
+                    sm:h-11
+                    2xl:w-13
+                    2xl:h-13
                     shrink-0
-                    rounded-2xl
+                    rounded-xl
+                    sm:rounded-2xl
                     overflow-hidden
                     bg-white
-                    shadow-md
-                    sm:shadow-lg
-                    shadow-teal-500/20
+                    shadow-sm
+                    sm:shadow-md
                     ring-1
                     ring-emerald-100
                     cursor-pointer
@@ -248,10 +246,10 @@ export const Navbar: React.FC = () => {
                       absolute
                       right-0
                       bottom-0
-                      w-2.5
-                      h-2.5
-                      sm:w-3.5
-                      sm:h-3.5
+                      w-2
+                      h-2
+                      sm:w-3
+                      sm:h-3
                       rounded-full
                       bg-white
                       flex
@@ -264,8 +262,8 @@ export const Navbar: React.FC = () => {
                       className="
                         w-1.5
                         h-1.5
-                        sm:w-2.5
-                        sm:h-2.5
+                        sm:w-2
+                        sm:h-2
                         rounded-full
                         bg-rose-500
                       "
@@ -274,13 +272,13 @@ export const Navbar: React.FC = () => {
                 </motion.div>
               </div>
 
-              {/* Brand Text: মোবাইলে সুন্দরভাবে ফিট হবে */}
-              <div className="min-w-0 max-w-[110px] xs:max-w-[145px] sm:max-w-[220px] 2xl:max-w-none">
-                <div className="text-[13px] sm:text-[17px] xl:text-[18px] 2xl:text-[20px] font-extrabold tracking-tight text-slate-900 leading-tight truncate">
+              {/* Brand Text + Subtitle: মোবাইলেও দুটো লাইনই পরিষ্কার দেখাবে */}
+              <div className="min-w-0 flex flex-col justify-center flex-shrink-0">
+                <div className="text-[12px] xs:text-[13.5px] sm:text-[17px] xl:text-[18px] 2xl:text-[20px] font-black tracking-tight text-slate-900 leading-tight whitespace-nowrap">
                   Shohayota Foundation
                 </div>
                 <div
-                  className="hidden sm:block text-[9px] sm:text-[11px] font-medium text-slate-600 mt-0.5 leading-tight truncate"
+                  className="block text-[8.5px] xs:text-[9.5px] sm:text-[11px] font-medium text-slate-600 mt-0.5 leading-none whitespace-nowrap"
                   style={{
                     fontFamily:
                       "'Noto Sans Bengali', 'Hind Siliguri', sans-serif",
@@ -353,11 +351,11 @@ export const Navbar: React.FC = () => {
             </nav>
 
             {/* =================================================
-                RIGHT SIDE CONTROLS (Always leaves space for Hamburger)
+                RIGHT SIDE CONTROLS
             ================================================== */}
             <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto min-w-0">
 
-              {/* 1. Notification Button */}
+              {/* 1. Notification */}
               <div className="relative shrink-0">
                 <button
                   onClick={() => {
@@ -369,8 +367,8 @@ export const Navbar: React.FC = () => {
                   }}
                   className="
                     relative
-                    w-8
-                    h-8
+                    w-7.5
+                    h-7.5
                     sm:w-10
                     sm:h-10
                     flex
@@ -384,16 +382,16 @@ export const Navbar: React.FC = () => {
                   "
                   aria-label="Notifications"
                 >
-                  <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Bell className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
 
                   {unreadNotifsCount > 0 && (
                     <span
                       className="
                         absolute
-                        top-0.5
-                        right-0.5
-                        min-w-[15px]
-                        h-[15px]
+                        top-0
+                        right-0
+                        min-w-[14px]
+                        h-[14px]
                         px-0.5
                         bg-rose-500
                         text-white
@@ -423,7 +421,7 @@ export const Navbar: React.FC = () => {
                       className="
                         fixed
                         inset-x-2.5
-                        top-[105px]
+                        top-[100px]
                         sm:absolute
                         sm:inset-auto
                         sm:right-0
@@ -520,7 +518,7 @@ export const Navbar: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {/* 2. Direct Admin Panel Button (Desktop 1536px+) */}
+              {/* 2. Admin (Desktop 1536px+) */}
               {isAdmin && (
                 <button
                   onClick={() => handleNavClick('admin')}
@@ -565,11 +563,12 @@ export const Navbar: React.FC = () => {
                     className="
                       flex
                       items-center
+                      justify-center
                       gap-1
                       sm:gap-2
-                      h-8
+                      h-7.5
                       sm:h-10
-                      px-1.5
+                      px-1
                       sm:px-2
                       rounded-xl
                       border
@@ -583,8 +582,8 @@ export const Navbar: React.FC = () => {
                   >
                     <div
                       className="
-                        w-6
-                        h-6
+                        w-5.5
+                        h-5.5
                         sm:w-7
                         sm:h-7
                         rounded-lg
@@ -593,7 +592,8 @@ export const Navbar: React.FC = () => {
                         to-teal-600
                         text-white
                         font-bold
-                        text-xs
+                        text-[11px]
+                        sm:text-xs
                         flex
                         items-center
                         justify-center
@@ -633,7 +633,7 @@ export const Navbar: React.FC = () => {
                         className="
                           fixed
                           right-2.5
-                          top-[105px]
+                          top-[100px]
                           sm:absolute
                           sm:right-0
                           sm:top-full
@@ -772,15 +772,13 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={() => openDonateModal()}
                 className="
-                  h-8
+                  h-7.5
                   sm:h-10
                   px-2
-                  xs:px-3
                   sm:px-4
                   2xl:px-5
                   rounded-xl
                   text-[10px]
-                  xs:text-[11px]
                   sm:text-xs
                   font-extrabold
                   text-white
@@ -807,7 +805,7 @@ export const Navbar: React.FC = () => {
                 <span>Donate</span>
               </button>
 
-              {/* 5. HAMBURGER MENU BUTTON (সবসময় মোবাইলে দৃশ্যমান থাকবে) */}
+              {/* 5. HAMBURGER MENU BUTTON */}
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -816,8 +814,8 @@ export const Navbar: React.FC = () => {
                 }}
                 className="
                   xl:hidden
-                  w-8
-                  h-8
+                  w-7.5
+                  h-7.5
                   sm:w-10
                   sm:h-10
                   shrink-0
@@ -849,7 +847,7 @@ export const Navbar: React.FC = () => {
       </div>
 
       {/* =====================================================
-          MOBILE & TABLET DRAWER (Below 1280px)
+          MOBILE & TABLET DRAWER
       ====================================================== */}
       {isMobileMenuOpen && (
         <div
