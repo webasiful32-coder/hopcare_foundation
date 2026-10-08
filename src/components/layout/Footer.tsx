@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { Heart, Droplet, Phone, MessageCircle, Mail, MapPin, ShieldCheck } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export const Footer: React.FC = () => {
   const { setCurrentPage, openDonateModal, openBloodRequestModal, openVolunteerModal } = useApp();
@@ -12,9 +13,89 @@ export const Footer: React.FC = () => {
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 via-teal-600 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-sky-600/20">
-                <Heart className="w-6 h-6 fill-white" />
-              </div>
+              {/* LOGO */}
+                  <div className="relative shrink-0">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.85, y: -8 }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                        y: [0, -2, 0],
+                      }}
+                      transition={{
+                        opacity: { duration: 0.5 },
+                        scale: { duration: 0.5, ease: 'easeOut' },
+                        y: {
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        },
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      className="
+                        relative
+                        w-10
+                        h-10
+                        sm:w-12
+                        sm:h-12
+                        2xl:w-14
+                        2xl:h-14
+                        shrink-0
+                        rounded-2xl
+                        overflow-hidden
+                        bg-white
+                        shadow-lg
+                        shadow-teal-500/20
+                        ring-1
+                        ring-emerald-100
+                        cursor-pointer
+                      "
+                    >
+                      <img
+                        src="/logo.png"
+                        alt="Shohayota Foundation"
+                        className="
+                          w-full
+                          h-full
+                          object-contain
+                          p-0.5
+                        "
+                      />
+
+                      {/* Small live indicator */}
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.4, duration: 0.3 }}
+                        className="
+                          absolute
+                          right-0
+                          bottom-0
+                          w-3
+                          h-3
+                          sm:w-3.5
+                          sm:h-3.5
+                          rounded-full
+                          bg-white
+                          flex
+                          items-center
+                          justify-center
+                          shadow-md
+                        "
+                      >
+                        <span
+                          className="
+                            w-2
+                            h-2
+                            sm:w-2.5
+                            sm:h-2.5
+                            rounded-full
+                            bg-rose-500
+                          "
+                        />
+                      </motion.span>
+                    </motion.div>
+                  </div>
               <div>
                 <span className="text-xl font-extrabold tracking-tight text-slate-900 block leading-none">
                   Shohayota<span className="text-sky-600">.</span>

@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-
 import { useApp } from '../../context/AppContext';
-
 import { motion, AnimatePresence } from 'motion/react';
-
 import {
   Heart,
   Droplet,
@@ -71,67 +68,51 @@ export const Navbar: React.FC = () => {
     setCurrentPage(pageId);
     setIsMobileMenuOpen(false);
     setIsUserMenuOpen(false);
+    setIsNotifOpen(false);
   };
 
   return (
-    <header className="sticky top-0 z-[100] w-full max-w-full overflow-x-hidden bg-white border-b border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.07)]">
+    <header className="sticky top-0 z-[100] w-full max-w-full bg-white border-b border-slate-200 shadow-[0_4px_20px_rgba(15,23,42,0.07)]">
 
       {/* =====================================================
-          EMERGENCY TOP BAR
+          EMERGENCY TOP BAR (All Devices Responsive)
       ====================================================== */}
-
       <div className="w-full max-w-full bg-[#991B45] bg-gradient-to-r from-[#991B45] via-[#B0184B] to-[#8F123C] text-white">
+        <div className="w-full max-w-[1440px] mx-auto px-2.5 sm:px-5 lg:px-8">
+          <div className="min-h-[34px] sm:min-h-[38px] py-1 flex items-center justify-between gap-1.5 sm:gap-3 min-w-0">
 
-        <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-5 lg:px-8">
-
-          <div className="min-h-[38px] flex items-center justify-between gap-3 min-w-0">
-
-            {/* LEFT */}
-
-            <div className="flex items-center min-w-0 gap-2">
-
-              <span className="relative flex h-2.5 w-2.5 shrink-0">
-
+            {/* LEFT: HOTLINE */}
+            <div className="flex items-center min-w-0 gap-1.5 sm:gap-2">
+              <span className="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5 shrink-0">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-60 animate-ping" />
-
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
-
+                <span className="relative inline-flex h-2 sm:h-2.5 w-2 sm:w-2.5 rounded-full bg-white" />
               </span>
 
-              <span className="hidden sm:inline text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-
+              <span className="hidden md:inline text-[11px] sm:text-xs font-semibold whitespace-nowrap">
                 24/7 Bangladesh Emergency Blood Hotline:
-
               </span>
 
               <a
                 href="tel:+8801934201151"
-                className="flex items-center gap-1 text-[12px] sm:text-xs font-extrabold text-white whitespace-nowrap hover:text-rose-100 transition shrink-0"
+                className="flex items-center gap-1 text-[11px] sm:text-xs font-extrabold text-white whitespace-nowrap hover:text-rose-100 transition shrink-0"
               >
-
-                <PhoneCall className="w-3.5 h-3.5 shrink-0" />
-
+                <PhoneCall className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                 <span>+8801934201151</span>
-
               </a>
-
             </div>
 
-            {/* RIGHT */}
-
-            <div className="flex items-center gap-2 shrink-0">
-
-              {/* Request Blood */}
-
+            {/* RIGHT: BLOOD REQUEST & LANGUAGE */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Request Blood (Tablets & Desktop) */}
               <button
                 onClick={() => openBloodRequestModal()}
                 className="
                   hidden
-                  md:flex
+                  lg:flex
                   items-center
                   gap-1.5
                   px-3
-                  py-1.5
+                  py-1
                   rounded-full
                   text-[11px]
                   font-bold
@@ -145,25 +126,24 @@ export const Navbar: React.FC = () => {
                   shrink-0
                 "
               >
-
                 <Droplet className="w-3.5 h-3.5 shrink-0" />
-
                 Request Blood Immediately
-
               </button>
 
-              {/* Language */}
-
+              {/* Language Switcher */}
               <button
                 onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
                 className="
                   flex
                   items-center
-                  gap-1.5
-                  px-3
-                  py-1.5
+                  gap-1
+                  sm:gap-1.5
+                  px-2
+                  sm:px-3
+                  py-0.5
+                  sm:py-1
                   rounded-full
-                  text-[11px]
+                  text-[10px]
                   sm:text-xs
                   font-bold
                   text-white
@@ -176,45 +156,32 @@ export const Navbar: React.FC = () => {
                   shrink-0
                 "
               >
-
-                <Globe className="w-3.5 h-3.5 shrink-0" />
-
+                <Globe className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                 <span>{lang === 'en' ? 'বাংলা' : 'English'}</span>
-
               </button>
-
             </div>
 
           </div>
-
         </div>
-
       </div>
 
       {/* =====================================================
-          MAIN NAVBAR
+          MAIN NAVBAR (Header Content)
       ====================================================== */}
-
       <div className="w-full max-w-full">
-
-        <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-5 lg:px-8">
-
-          {/* IMPORTANT:
-              min-w-0 prevents flex children from forcing overflow.
-          */}
-
-          <div className="min-h-[78px] lg:min-h-[82px] flex items-center gap-3 xl:gap-4 min-w-0">
+        <div className="w-full max-w-[1440px] mx-auto px-2.5 sm:px-5 lg:px-8">
+          <div className="min-h-[64px] sm:min-h-[74px] lg:min-h-[82px] flex items-center justify-between gap-1.5 sm:gap-3 xl:gap-4 min-w-0">
 
             {/* =================================================
-                LOGO + BRAND
+                LOGO + BRAND TEXT
             ================================================== */}
-
             <button
               onClick={() => handleNavClick('home')}
               className="
                 flex
                 items-center
-                gap-2.5
+                gap-2
+                sm:gap-2.5
                 shrink-0
                 min-w-0
                 cursor-pointer
@@ -222,135 +189,114 @@ export const Navbar: React.FC = () => {
                 group
               "
             >
+              {/* Logo Icon */}
+             {/* LOGO */}
+                <div className="relative shrink-0">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.85, y: -8 }}
+                    animate={{
+                      opacity: 1,
+                      scale: 1,
+                      y: [0, -2, 0],
+                    }}
+                    transition={{
+                      opacity: { duration: 0.5 },
+                      scale: { duration: 0.5, ease: 'easeOut' },
+                      y: {
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      },
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    className="
+                      relative
+                      w-10
+                      h-10
+                      sm:w-12
+                      sm:h-12
+                      2xl:w-14
+                      2xl:h-14
+                      shrink-0
+                      rounded-2xl
+                      overflow-hidden
+                      bg-white
+                      shadow-lg
+                      shadow-teal-500/20
+                      ring-1
+                      ring-emerald-100
+                      cursor-pointer
+                    "
+                  >
+                    <img
+                      src="/logo.png"
+                      alt="Shohayota Foundation"
+                      className="
+                        w-full
+                        h-full
+                        object-contain
+                        p-0.5
+                      "
+                    />
 
-              {/* Logo */}
-
-              <div className="relative shrink-0">
-
-                <div
-                  className="
-                    w-11
-                    h-11
-                    sm:w-12
-                    sm:h-12
-                    rounded-[16px]
-                    bg-gradient-to-br
-                    from-cyan-500
-                    via-teal-500
-                    to-emerald-500
-                    flex
-                    items-center
-                    justify-center
-                    shadow-lg
-                    shadow-teal-500/25
-                    group-hover:scale-105
-                    transition-transform
-                  "
-                >
-
-                  <Heart
-                    className="w-6 h-6 sm:w-7 sm:h-7 text-white fill-white"
-                    strokeWidth={2}
-                  />
-
+                    {/* Small live indicator */}
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.4, duration: 0.3 }}
+                      className="
+                        absolute
+                        right-0
+                        bottom-0
+                        w-3
+                        h-3
+                        sm:w-3.5
+                        sm:h-3.5
+                        rounded-full
+                        bg-white
+                        flex
+                        items-center
+                        justify-center
+                        shadow-md
+                      "
+                    >
+                      <span
+                        className="
+                          w-2
+                          h-2
+                          sm:w-2.5
+                          sm:h-2.5
+                          rounded-full
+                          bg-rose-500
+                        "
+                      />
+                    </motion.span>
+                  </motion.div>
                 </div>
 
-                <span
-                  className="
-                    absolute
-                    -right-1
-                    -bottom-1
-                    w-4
-                    h-4
-                    rounded-full
-                    bg-white
-                    flex
-                    items-center
-                    justify-center
-                    shadow
-                  "
-                >
-
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-
-                </span>
-
-              </div>
-
-              {/* Brand Text */}
-
-              <div
-                className="
-                  hidden
-                  sm:block
-                  min-w-0
-                  max-w-[190px]
-                  lg:max-w-[230px]
-                  2xl:max-w-none
-                "
-              >
-
-                <div
-                  className="
-                    text-[16px]
-                    sm:text-[18px]
-                    2xl:text-[21px]
-                    font-extrabold
-                    tracking-tight
-                    text-slate-900
-                    leading-tight
-                    whitespace-nowrap
-                    overflow-hidden
-                    text-ellipsis
-                  "
-                >
-
+              {/* Brand Text & Subtitle: All Screen Breakpoint Safe */}
+              <div className="min-w-0 max-w-[140px] sm:max-w-[220px] 2xl:max-w-none">
+                <div className="text-[13px] sm:text-[17px] xl:text-[18px] 2xl:text-[20px] font-extrabold tracking-tight text-slate-900 leading-tight truncate">
                   Shohayota Foundation
-
                 </div>
-
                 <div
-                  className="
-                    text-[10px]
-                    sm:text-[11px]
-                    2xl:text-[12px]
-                    font-medium
-                    text-slate-600
-                    mt-1
-                    leading-tight
-                    whitespace-nowrap
-                    overflow-hidden
-                    text-ellipsis
-                  "
+                  className="hidden sm:block text-[9px] sm:text-[11px] font-medium text-slate-600 mt-0.5 leading-tight truncate"
                   style={{
                     fontFamily:
                       "'Noto Sans Bengali', 'Hind Siliguri', sans-serif",
                   }}
                 >
-
                   মানুষের পাশে, মানবতার পথে
-
                 </div>
-
               </div>
-
             </button>
 
             {/* =================================================
-                DESKTOP NAVIGATION
-
-                1536px+ = Desktop navigation
-                Below 1536px = Hamburger menu
-
-                This prevents 1280-1535px laptop overflow.
+                DESKTOP NAVIGATION (1280px+ Laptops & Desktops)
             ================================================== */}
-
-            <nav className="hidden 2xl:flex flex-1 items-center justify-center min-w-0 overflow-hidden">
-
-              <div className="flex items-center gap-0 2xl:gap-1 min-w-0">
-
+            <nav className="hidden xl:flex flex-1 items-center justify-center min-w-0 px-1">
+              <div className="flex items-center gap-0.5 2xl:gap-1.5 min-w-0">
                 {navLinks.map((link) => {
-
                   const isActive = currentPage === link.id;
 
                   return (
@@ -361,7 +307,7 @@ export const Navbar: React.FC = () => {
                         relative
                         px-2
                         2xl:px-3
-                        py-2.5
+                        py-2
                         rounded-xl
                         text-[12px]
                         2xl:text-[13px]
@@ -380,7 +326,6 @@ export const Navbar: React.FC = () => {
                         }
                       `}
                     >
-
                       {link.label}
 
                       {isActive && (
@@ -391,7 +336,8 @@ export const Navbar: React.FC = () => {
                             left-1/2
                             -translate-x-1/2
                             bottom-0.5
-                            w-7
+                            w-6
+                            2xl:w-7
                             h-[3px]
                             rounded-full
                             bg-gradient-to-r
@@ -400,40 +346,33 @@ export const Navbar: React.FC = () => {
                           "
                         />
                       )}
-
                     </button>
                   );
-
                 })}
-
               </div>
-
             </nav>
 
             {/* =================================================
-                RIGHT SIDE
+                RIGHT SIDE CONTROLS (Responsive)
             ================================================== */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto min-w-0">
 
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto min-w-0">
-
-              {/* Notification */}
-
+              {/* Notification Button */}
               <div className="relative shrink-0">
-
                 <button
                   onClick={() => {
-
                     setIsNotifOpen(!isNotifOpen);
-
+                    setIsUserMenuOpen(false);
                     if (!isNotifOpen && unreadNotifsCount > 0) {
                       markNotificationsAsRead();
                     }
-
                   }}
                   className="
                     relative
-                    w-10
-                    h-10
+                    w-9
+                    h-9
+                    sm:w-10
+                    sm:h-10
                     flex
                     items-center
                     justify-center
@@ -445,17 +384,16 @@ export const Navbar: React.FC = () => {
                   "
                   aria-label="Notifications"
                 >
-
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
 
                   {unreadNotifsCount > 0 && (
                     <span
                       className="
                         absolute
-                        top-0
-                        right-0
-                        min-w-[17px]
-                        h-[17px]
+                        top-0.5
+                        right-0.5
+                        min-w-[16px]
+                        h-[16px]
                         px-1
                         bg-rose-500
                         text-white
@@ -472,27 +410,29 @@ export const Navbar: React.FC = () => {
                       {unreadNotifsCount > 9 ? '9+' : unreadNotifsCount}
                     </span>
                   )}
-
                 </button>
 
-                {/* Notification Dropdown */}
-
+                {/* Notification Dropdown: মোবাইলে ফিক্সড ও ডেক্সটপে অ্যাবসলিউট */}
                 <AnimatePresence>
-
                   {isNotifOpen && (
-
                     <motion.div
                       initial={{ opacity: 0, y: 8, scale: 0.97 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.97 }}
                       className="
-                        absolute
-                        right-0
-                        top-full
-                        mt-2
-                        w-[310px]
-                        sm:w-[370px]
+                        fixed
+                        inset-x-2.5
+                        top-[105px]
+                        sm:absolute
+                        sm:inset-auto
+                        sm:right-0
+                        sm:top-full
+                        sm:mt-2
+                        sm:w-[360px]
                         max-w-[calc(100vw-20px)]
+                        sm:max-w-[420px]
+                        mx-auto
+                        sm:mx-0
                         bg-white
                         rounded-2xl
                         border
@@ -502,7 +442,6 @@ export const Navbar: React.FC = () => {
                         z-[200]
                       "
                     >
-
                       <div
                         className="
                           px-4
@@ -517,17 +456,13 @@ export const Navbar: React.FC = () => {
                           min-w-0
                         "
                       >
-
                         <div className="min-w-0">
-
-                          <h3 className="text-sm font-extrabold text-slate-900">
+                          <h3 className="text-sm font-extrabold text-slate-900 truncate">
                             Notifications
                           </h3>
-
-                          <p className="text-[10px] text-slate-500 mt-0.5">
+                          <p className="text-[10px] text-slate-500 mt-0.5 truncate">
                             Stay updated with HopeCare
                           </p>
-
                         </div>
 
                         <button
@@ -543,27 +478,18 @@ export const Navbar: React.FC = () => {
                         >
                           Mark all read
                         </button>
-
                       </div>
 
-                      <div className="max-h-[320px] overflow-y-auto">
-
+                      <div className="max-h-[300px] sm:max-h-[340px] overflow-y-auto">
                         {notifications.length === 0 ? (
-
                           <div className="py-10 text-center">
-
                             <Bell className="w-6 h-6 mx-auto text-slate-300 mb-2" />
-
                             <p className="text-xs font-semibold text-slate-500">
                               No notifications yet
                             </p>
-
                           </div>
-
                         ) : (
-
                           notifications.map((n) => (
-
                             <div
                               key={n.id}
                               className="
@@ -575,43 +501,26 @@ export const Navbar: React.FC = () => {
                                 min-w-0
                               "
                             >
-
                               <p className="text-xs font-bold text-slate-900 break-words">
                                 {n.title}
                               </p>
-
                               <p className="text-[11px] text-slate-600 mt-1 break-words">
                                 {n.message}
                               </p>
-
                               <span className="text-[9px] text-slate-400 mt-1 block">
                                 {new Date(n.createdAt).toLocaleDateString()}
                               </span>
-
                             </div>
-
                           ))
-
                         )}
-
                       </div>
-
                     </motion.div>
-
                   )}
-
                 </AnimatePresence>
-
               </div>
 
-              {/* =================================================
-                  DIRECT ADMIN PANEL BUTTON
-
-                  Only desktop 1536px+
-              ================================================== */}
-
+              {/* DIRECT ADMIN PANEL BUTTON (Desktop 1536px+) */}
               {isAdmin && (
-
                 <button
                   onClick={() => handleNavClick('admin')}
                   className="
@@ -639,31 +548,28 @@ export const Navbar: React.FC = () => {
                   "
                   title="Admin Dashboard"
                 >
-
                   <ShieldAlert className="w-4 h-4 shrink-0" />
-
                   <span>Admin Panel</span>
-
                 </button>
-
               )}
 
-              {/* =================================================
-                  USER
-              ================================================== */}
-
+              {/* USER PROFILE BUTTON & MODAL */}
               {user ? (
-
                 <div className="relative shrink-0">
-
                   <button
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    onClick={() => {
+                      setIsUserMenuOpen(!isUserMenuOpen);
+                      setIsNotifOpen(false);
+                    }}
                     className="
                       flex
                       items-center
-                      gap-2
-                      h-10
-                      px-2
+                      gap-1.5
+                      sm:gap-2
+                      h-9
+                      sm:h-10
+                      px-1.5
+                      sm:px-2
                       rounded-xl
                       border
                       border-slate-200
@@ -674,11 +580,12 @@ export const Navbar: React.FC = () => {
                       shrink-0
                     "
                   >
-
                     <div
                       className="
-                        w-7
-                        h-7
+                        w-6
+                        h-6
+                        sm:w-7
+                        sm:h-7
                         rounded-lg
                         bg-gradient-to-br
                         from-cyan-500
@@ -693,54 +600,45 @@ export const Navbar: React.FC = () => {
                         shrink-0
                       "
                     >
-
                       {user.avatarUrl ? (
-
                         <img
                           src={user.avatarUrl}
                           alt={user.fullName}
                           className="w-full h-full object-cover"
                         />
-
                       ) : (
-
                         user.fullName.charAt(0).toUpperCase()
-
                       )}
-
                     </div>
 
                     <div className="hidden 2xl:block text-left min-w-0 max-w-[90px]">
-
                       <span className="text-[11px] font-bold text-slate-900 block truncate">
                         {user.fullName.split(' ')[0]}
                       </span>
-
                       <span className="text-[9px] text-slate-500 uppercase font-bold truncate block">
                         {user.role}
                       </span>
-
                     </div>
 
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-
+                    <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" />
                   </button>
 
                   <AnimatePresence>
-
                     {isUserMenuOpen && (
-
                       <motion.div
                         initial={{ opacity: 0, y: 8, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.97 }}
                         className="
-                          absolute
-                          right-0
-                          top-full
-                          mt-2
+                          fixed
+                          right-2.5
+                          top-[105px]
+                          sm:absolute
+                          sm:right-0
+                          sm:top-full
+                          sm:mt-2
                           w-60
-                          max-w-[calc(100vw-24px)]
+                          max-w-[calc(100vw-20px)]
                           bg-white
                           rounded-2xl
                           border
@@ -750,17 +648,13 @@ export const Navbar: React.FC = () => {
                           z-[200]
                         "
                       >
-
                         <div className="p-3 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 mb-1 min-w-0">
-
                           <p className="text-sm font-extrabold text-slate-900 truncate">
                             {user.fullName}
                           </p>
-
                           <p className="text-[10px] text-slate-500 mt-0.5 truncate">
                             {user.email}
                           </p>
-
                         </div>
 
                         <button
@@ -779,21 +673,15 @@ export const Navbar: React.FC = () => {
                             min-w-0
                           "
                         >
-
                           <span className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
-
                             <LayoutDashboard className="w-4 h-4 text-teal-600" />
-
                           </span>
-
                           <span className="text-xs font-bold text-slate-700 truncate">
                             User Dashboard
                           </span>
-
                         </button>
 
                         {isAdmin && (
-
                           <button
                             onClick={() => handleNavClick('admin')}
                             className="
@@ -810,23 +698,16 @@ export const Navbar: React.FC = () => {
                               min-w-0
                             "
                           >
-
                             <span className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-
                               <ShieldAlert className="w-4 h-4 text-purple-600" />
-
                             </span>
-
                             <span className="text-xs font-bold text-purple-700 truncate">
                               Admin Dashboard
                             </span>
-
                           </button>
-
                         )}
 
                         <div className="border-t border-slate-100 mt-1 pt-1">
-
                           <button
                             onClick={() => {
                               logout();
@@ -846,29 +727,16 @@ export const Navbar: React.FC = () => {
                               transition
                             "
                           >
-
                             <LogOut className="w-4 h-4 shrink-0" />
-
-                            <span className="text-xs font-bold">
-                              Sign Out
-                            </span>
-
+                            <span className="text-xs font-bold">Sign Out</span>
                           </button>
-
                         </div>
-
                       </motion.div>
-
                     )}
-
                   </AnimatePresence>
-
                 </div>
-
               ) : (
-
-                /* SIGN IN */
-
+                /* SIGN IN (Desktop / Laptop) */
                 <button
                   onClick={() => handleNavClick('auth')}
                   className="
@@ -876,7 +744,8 @@ export const Navbar: React.FC = () => {
                     lg:flex
                     items-center
                     gap-1.5
-                    h-10
+                    h-9
+                    sm:h-10
                     px-3
                     rounded-xl
                     border
@@ -893,24 +762,18 @@ export const Navbar: React.FC = () => {
                     shrink-0
                   "
                 >
-
                   <UserIcon className="w-4 h-4 shrink-0" />
-
                   <span>{t.signIn}</span>
-
                 </button>
-
               )}
 
-              {/* =================================================
-                  DONATE
-              ================================================== */}
-
+              {/* DONATE BUTTON (Mobile & Desktop Clean Scaling) */}
               <button
                 onClick={() => openDonateModal()}
                 className="
-                  h-10
-                  px-3
+                  h-9
+                  sm:h-10
+                  px-2.5
                   sm:px-4
                   2xl:px-5
                   rounded-xl
@@ -925,42 +788,37 @@ export const Navbar: React.FC = () => {
                   hover:from-cyan-700
                   hover:via-teal-700
                   hover:to-emerald-700
-                  shadow-lg
+                  shadow-md
+                  sm:shadow-lg
                   shadow-teal-600/20
                   flex
                   items-center
                   justify-center
-                  gap-1.5
+                  gap-1
+                  sm:gap-1.5
                   whitespace-nowrap
                   transition
                   shrink-0
                 "
               >
-
-                <Heart className="w-4 h-4 fill-white shrink-0" />
-
-                <span className="hidden sm:inline">
-                  {t.donateNow}
-                </span>
-
-                <span className="sm:hidden">
-                  Donate
-                </span>
-
+                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white shrink-0" />
+                <span className="hidden sm:inline">{t.donateNow}</span>
+                <span className="sm:hidden">Donate</span>
               </button>
 
-              {/* =================================================
-                  HAMBURGER
-
-                  Shown below 1536px
-              ================================================== */}
-
+              {/* HAMBURGER BUTTON (Hidden on 1280px+ desktop) */}
               <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={() => {
+                  setIsMobileMenuOpen(!isMobileMenuOpen);
+                  setIsNotifOpen(false);
+                  setIsUserMenuOpen(false);
+                }}
                 className="
-                  2xl:hidden
-                  w-10
-                  h-10
+                  xl:hidden
+                  w-9
+                  h-9
+                  sm:w-10
+                  sm:h-10
                   shrink-0
                   flex
                   items-center
@@ -977,32 +835,26 @@ export const Navbar: React.FC = () => {
                 "
                 aria-label="Toggle Navigation"
               >
-
                 {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 ) : (
-                  <Menu className="w-6 h-6" />
+                  <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
                 )}
-
               </button>
 
             </div>
 
           </div>
-
         </div>
-
       </div>
 
       {/* =====================================================
-          MOBILE / TABLET MENU
+          MOBILE & TABLET DRAWER (Below 1280px)
       ====================================================== */}
-
       {isMobileMenuOpen && (
-
         <div
           className="
-            2xl:hidden
+            xl:hidden
             w-full
             max-w-full
             bg-white
@@ -1011,34 +863,33 @@ export const Navbar: React.FC = () => {
             shadow-[0_15px_35px_rgba(15,23,42,0.12)]
             relative
             z-[150]
-            overflow-x-hidden
           "
         >
-
           <div
             className="
               w-full
               max-w-[1440px]
               mx-auto
-              px-4
+              px-3
               sm:px-6
-              py-4
-              max-h-[calc(100vh-115px)]
+              py-3.5
+              sm:py-4
+              max-h-[calc(100vh-100px)]
               overflow-y-auto
-              overflow-x-hidden
               min-w-0
             "
           >
-
-            {/* Mobile Brand Header */}
-
+            {/* Mobile Brand Card */}
             <div
               className="
                 flex
                 items-center
-                gap-3
-                p-3
-                mb-4
+                gap-2.5
+                sm:gap-3
+                p-2.5
+                sm:p-3
+                mb-3
+                sm:mb-4
                 rounded-2xl
                 bg-gradient-to-r
                 from-teal-50
@@ -1046,14 +897,14 @@ export const Navbar: React.FC = () => {
                 border
                 border-teal-100
                 min-w-0
-                max-w-full
               "
             >
-
               <div
                 className="
-                  w-11
-                  h-11
+                  w-9
+                  h-9
+                  sm:w-11
+                  sm:h-11
                   rounded-xl
                   bg-gradient-to-br
                   from-cyan-500
@@ -1064,19 +915,15 @@ export const Navbar: React.FC = () => {
                   shrink-0
                 "
               >
-
-                <Heart className="w-6 h-6 text-white fill-white" />
-
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-white" />
               </div>
 
               <div className="min-w-0">
-
-                <p className="text-base font-extrabold text-slate-900 truncate">
+                <p className="text-sm sm:text-base font-extrabold text-slate-900 truncate">
                   Shohayota Foundation
                 </p>
-
                 <p
-                  className="text-xs text-slate-600 mt-0.5 truncate"
+                  className="text-[10px] sm:text-xs text-slate-600 mt-0.5 truncate"
                   style={{
                     fontFamily:
                       "'Noto Sans Bengali', 'Hind Siliguri', sans-serif",
@@ -1084,21 +931,15 @@ export const Navbar: React.FC = () => {
                 >
                   মানুষের পাশে, মানবতার পথে
                 </p>
-
               </div>
-
             </div>
 
-            {/* MOBILE NAV LINKS */}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
-
+            {/* Mobile Nav Links Grid (1 col on small phones, 2 col on tablets) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 min-w-0">
               {navLinks.map((link) => {
-
                 const isActive = currentPage === link.id;
 
                 return (
-
                   <button
                     key={link.id}
                     onClick={() => handleNavClick(link.id)}
@@ -1108,12 +949,14 @@ export const Navbar: React.FC = () => {
                       flex
                       items-center
                       justify-between
-                      gap-3
-                      px-4
-                      py-3.5
+                      gap-2
+                      px-3.5
+                      py-3
+                      sm:py-3.5
                       rounded-xl
                       text-left
-                      text-sm
+                      text-xs
+                      sm:text-sm
                       font-bold
                       transition-all
                       border
@@ -1124,29 +967,18 @@ export const Navbar: React.FC = () => {
                       }
                     `}
                   >
-
-                    <span className="truncate">
-                      {link.label}
-                    </span>
-
+                    <span className="truncate">{link.label}</span>
                     {isActive && (
                       <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
                     )}
-
                   </button>
-
                 );
-
               })}
-
             </div>
 
-            {/* MOBILE ACTIONS */}
-
-            <div className="mt-4 pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
-
+            {/* Mobile Actions */}
+            <div className="mt-3.5 pt-3.5 sm:mt-4 sm:pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
               {!user ? (
-
                 <button
                   onClick={() => {
                     openAuthModal('login');
@@ -1155,13 +987,15 @@ export const Navbar: React.FC = () => {
                   className="
                     w-full
                     min-w-0
-                    py-3.5
+                    py-3
+                    sm:py-3.5
                     rounded-xl
                     border
                     border-slate-200
                     bg-white
                     text-slate-700
-                    text-sm
+                    text-xs
+                    sm:text-sm
                     font-extrabold
                     hover:bg-slate-50
                     transition
@@ -1171,17 +1005,10 @@ export const Navbar: React.FC = () => {
                     gap-2
                   "
                 >
-
                   <UserIcon className="w-4 h-4 shrink-0" />
-
-                  <span className="truncate">
-                    Sign In / Register
-                  </span>
-
+                  <span className="truncate">Sign In / Register</span>
                 </button>
-
               ) : (
-
                 <button
                   onClick={() => {
                     handleNavClick('dashboard');
@@ -1190,13 +1017,15 @@ export const Navbar: React.FC = () => {
                   className="
                     w-full
                     min-w-0
-                    py-3.5
+                    py-3
+                    sm:py-3.5
                     rounded-xl
                     bg-gradient-to-r
                     from-cyan-600
                     to-teal-600
                     text-white
-                    text-sm
+                    text-xs
+                    sm:text-sm
                     font-extrabold
                     shadow-sm
                     truncate
@@ -1204,13 +1033,9 @@ export const Navbar: React.FC = () => {
                 >
                   Go to User Dashboard
                 </button>
-
               )}
 
-              {/* ADMIN */}
-
               {isAdmin && (
-
                 <button
                   onClick={() => {
                     handleNavClick('admin');
@@ -1219,13 +1044,15 @@ export const Navbar: React.FC = () => {
                   className="
                     w-full
                     min-w-0
-                    py-3.5
+                    py-3
+                    sm:py-3.5
                     rounded-xl
                     bg-gradient-to-r
                     from-purple-600
                     to-indigo-600
                     text-white
-                    text-sm
+                    text-xs
+                    sm:text-sm
                     font-extrabold
                     shadow-sm
                     flex
@@ -1234,18 +1061,10 @@ export const Navbar: React.FC = () => {
                     gap-2
                   "
                 >
-
-                  <ShieldAlert className="w-5 h-5 shrink-0" />
-
-                  <span className="truncate">
-                    Admin Dashboard
-                  </span>
-
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Admin Dashboard</span>
                 </button>
-
               )}
-
-              {/* Request Blood */}
 
               <button
                 onClick={() => {
@@ -1255,13 +1074,15 @@ export const Navbar: React.FC = () => {
                 className="
                   w-full
                   min-w-0
-                  py-3.5
+                  py-3
+                  sm:py-3.5
                   rounded-xl
                   bg-gradient-to-r
                   from-rose-500
                   to-red-600
                   text-white
-                  text-sm
+                  text-xs
+                  sm:text-sm
                   font-extrabold
                   flex
                   items-center
@@ -1270,32 +1091,26 @@ export const Navbar: React.FC = () => {
                   shadow-sm
                 "
               >
-
-                <Droplet className="w-5 h-5 shrink-0" />
-
-                <span>
-                  Request Blood
-                </span>
-
+                <Droplet className="w-4 h-4 shrink-0" />
+                <span>Request Blood</span>
               </button>
-
             </div>
 
-            {/* Mobile Language */}
-
+            {/* Language Switch for Mobile */}
             <button
               onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
               className="
                 w-full
                 min-w-0
                 mt-2
-                py-3
+                py-2.5
                 rounded-xl
                 bg-slate-50
                 border
                 border-slate-200
                 text-slate-700
-                text-sm
+                text-xs
+                sm:text-sm
                 font-bold
                 flex
                 items-center
@@ -1303,19 +1118,11 @@ export const Navbar: React.FC = () => {
                 gap-2
               "
             >
-
               <Globe className="w-4 h-4 shrink-0" />
-
-              <span>
-                {lang === 'en' ? 'বাংলায় দেখুন' : 'View in English'}
-              </span>
-
+              <span>{lang === 'en' ? 'বাংলায় দেখুন' : 'View in English'}</span>
             </button>
-
           </div>
-
         </div>
-
       )}
 
     </header>
