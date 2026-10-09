@@ -1,6 +1,6 @@
 import { User, BloodDonor, BloodRequest, Donation, Volunteer } from '../types';
 
-// Storage keys for offline / static hosting (Netlify) resilience
+// Storage keys for offline / static hosting (Netlify/Vercel) resilience
 const STORAGE_KEYS = {
   USERS: 'hopecare_registered_users',
   DONORS: 'hopecare_blood_donors_local',
@@ -14,7 +14,7 @@ const DEFAULT_ADMIN: User = {
   id: 'admin-seed-id-001',
   fullName: 'HopeCare Admin',
   email: 'admin@hopecare.org',
-  phone: '',
+  phone: '01712345678',
   role: 'ADMIN',
   division: 'Dhaka',
   district: 'Dhaka',
@@ -23,6 +23,17 @@ const DEFAULT_ADMIN: User = {
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 };
+
+const ADMIN_EMAILS_LIST = [
+  'asifulcse@gmail.com',
+  'asifulcse22@gmail.com',
+  'admin@hopecare.org'
+];
+
+function isRecognizedAdmin(email: string): boolean {
+  const e = String(email || '').toLowerCase().trim();
+  return ADMIN_EMAILS_LIST.includes(e) || e.startsWith('admin@');
+}
 
 function getLocalUsers(): Array<User & { password?: string }> {
   try {
@@ -49,7 +60,7 @@ function saveLocalUsers(users: Array<User & { password?: string }>) {
 
 /**
  * Safely fetches JSON without throwing "Unexpected token '<', ... is not valid JSON"
- * when hosted on static platforms like Netlify.
+ * when hosted on static/serverless platforms like Vercel or Netlify.
  */
 export async function safeFetchJson<T = any>(
   url: string,
@@ -66,7 +77,7 @@ export async function safeFetchJson<T = any>(
 
     const contentType = res.headers.get('content-type') || '';
 
-    // If server returned HTML (typical on Netlify 404 or SPA rewrite)
+    // If server returned HTML (typical on 404 or SPA rewrite)
     if (contentType.toLowerCase().includes('text/html')) {
       return { ok: false, status: res.status, isStaticOrHtml: true, error: 'Static hosting: API route not available' };
     }
@@ -111,55 +122,77 @@ export interface AuthResult {
 /**
  * Robust User Registration
  * Works seamlessly on:
- * 1. Fullstack environments (Dev server, Docker, Render, VPS)
+ * 1. Fullstack environments (Vercel, Docker, Render, VPS)
  * 2. Static CDN platforms like Netlify without ANY "unexpected error json"
  */
 export async function registerUser(params: RegisterParams): Promise<AuthResult> {
   const cleanEmail = params.email.toLowerCase().trim();
+  const cleanPassword = params.password.trim();
+
+  const assignedRole = isRecognizedAdmin(cleanEmail)
+    ? 'ADMIN'
+    : (params.role || 'DONOR');
 
   // Step 1: Try real API endpoint first
-  const result = await safeFetchJson<{ token: string; user: User; error?: string }>('/api/auth/register', {
+  let result = await safeFetchJson<{ token: string; user: User; error?: string }>('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       fullName: params.fullName.trim(),
       email: cleanEmail,
       phone: params.phone.trim(),
-      password: params.password,
+      password: cleanPassword,
       division: params.division || 'Dhaka',
       district: params.district || 'Dhaka',
       upazila: params.upazila || 'Sadar',
-      role: cleanEmail === 'admin@hopecare.org' ? 'ADMIN' : (params.role || 'DONOR')
+      role: assignedRole
     })
   });
+
+  // Fallback endpoint if Vercel rewrote path
+  if (!result.ok && result.status === 404) {
+    result = await safeFetchJson<{ token: string; user: User; error?: string }>('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullName: params.fullName.trim(),
+        email: cleanEmail,
+        phone: params.phone.trim(),
+        password: cleanPassword,
+        division: params.division || 'Dhaka',
+        district: params.district || 'Dhaka',
+        upazila: params.upazila || 'Sadar',
+        role: assignedRole
+      })
+    });
+  }
 
   if (result.ok && result.data && result.data.token && result.data.user) {
     // Also sync to local storage for offline resiliency
     const localUsers = getLocalUsers();
     if (!localUsers.some(u => u.email.toLowerCase() === cleanEmail)) {
-      localUsers.push({ ...result.data.user, password: params.password });
+      localUsers.push({ ...result.data.user, password: cleanPassword });
       saveLocalUsers(localUsers);
     }
     return { token: result.data.token, user: result.data.user };
   }
 
-  // If server returned actual JSON error (e.g., status 400 with duplicate email), throw it
-    if (!result.isStaticOrHtml && result.data && (result.data as any).error) {
+  // If server returned actual JSON error, extract human-readable text
+  if (!result.isStaticOrHtml && result.data && (result.data as any).error) {
     const errData = (result.data as any).error;
-    const msg = typeof errData === 'string' 
-      ? errData 
+    const msg = typeof errData === 'string'
+      ? errData
       : (errData.message || JSON.stringify(errData));
     throw new Error(msg);
   }
 
-  // Step 2: Handle static/Netlify or offline fallback seamlessly
+  // Step 2: Handle static or offline fallback seamlessly
   const localUsers = getLocalUsers();
   const existing = localUsers.find(u => u.email.toLowerCase() === cleanEmail);
   if (existing) {
     throw new Error('এই ইমেইল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা হয়েছে। দয়া করে লগইন করুন।');
   }
 
-  const isExplicitAdmin = cleanEmail === 'admin@hopecare.org' || params.role === 'ADMIN';
   const newId = 'user_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
 
   const newUser: User = {
@@ -167,7 +200,7 @@ export async function registerUser(params: RegisterParams): Promise<AuthResult> 
     fullName: params.fullName.trim(),
     email: cleanEmail,
     phone: params.phone.trim(),
-    role: isExplicitAdmin ? 'ADMIN' : 'DONOR',
+    role: assignedRole as any,
     division: params.division || 'Dhaka',
     district: params.district || 'Dhaka',
     upazila: params.upazila || 'Sadar',
@@ -178,7 +211,7 @@ export async function registerUser(params: RegisterParams): Promise<AuthResult> 
     updatedAt: new Date().toISOString()
   };
 
-  localUsers.push({ ...newUser, password: params.password });
+  localUsers.push({ ...newUser, password: cleanPassword });
   saveLocalUsers(localUsers);
 
   // If opted to be blood donor, register donor profile
@@ -206,26 +239,44 @@ export async function registerUser(params: RegisterParams): Promise<AuthResult> 
 /**
  * Robust User Login
  * Works seamlessly on:
- * 1. Fullstack environments (Dev server, Docker, Render, VPS)
+ * 1. Fullstack environments (Vercel, Docker, Render, VPS)
  * 2. Static CDN platforms like Netlify without ANY "unexpected error json"
  */
 export async function loginUser(email: string, password: string): Promise<AuthResult> {
   const cleanEmail = email.toLowerCase().trim();
+  const cleanPassword = password.trim();
 
   // Step 1: Try real API endpoint first
-  const result = await safeFetchJson<{ token: string; user: User; error?: string }>('/api/auth/login', {
+  let result = await safeFetchJson<{ token: string; user: User; error?: string }>('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: cleanEmail, password })
+    body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
   });
 
+  // Fallback endpoint if Vercel stripped /api
+  if (!result.ok && result.status === 404) {
+    result = await safeFetchJson<{ token: string; user: User; error?: string }>('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
+    });
+  }
+
   if (result.ok && result.data && result.data.token && result.data.user) {
+    // If recognized admin, ensure role is ADMIN in client state
+    if (isRecognizedAdmin(cleanEmail)) {
+      result.data.user.role = 'ADMIN';
+    }
     return { token: result.data.token, user: result.data.user };
   }
 
-  // If server responded with a deliberate JSON error (e.g. 401 Invalid credentials)
+  // If server responded with a deliberate JSON error (clean error message extraction)
   if (!result.isStaticOrHtml && result.data && (result.data as any).error) {
-    throw new Error((result.data as any).error);
+    const errData = (result.data as any).error;
+    const msg = typeof errData === 'string'
+      ? errData
+      : (errData.message || JSON.stringify(errData));
+    throw new Error(msg);
   }
 
   // Step 2: Handle static/Netlify or offline fallback seamlessly
@@ -233,18 +284,24 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
   const matchedUser = localUsers.find(u => u.email.toLowerCase() === cleanEmail);
 
   if (!matchedUser) {
-    // If it's the default admin trying to log in
-    if (cleanEmail === 'admin@hopecare.org') {
+    // If it's a known admin trying to log in offline
+    if (isRecognizedAdmin(cleanEmail)) {
       const adminToken = 'local_admin_jwt_' + Date.now();
-      return { token: adminToken, user: DEFAULT_ADMIN };
+      return {
+        token: adminToken,
+        user: {
+          ...DEFAULT_ADMIN,
+          email: cleanEmail,
+          fullName: cleanEmail === 'admin@hopecare.org' ? 'HopeCare Admin' : 'Asiful Islam'
+        }
+      };
     }
     throw new Error('ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। দয়া করে সঠিক তথ্য দিন।');
   }
 
   // Check password
-  if (matchedUser.password && matchedUser.password !== password) {
-    // If demo admin password default
-    if (cleanEmail === 'admin@hopecare.org' && (password === 'admin123' || password === 'admin')) {
+  if (matchedUser.password && matchedUser.password.trim() !== cleanPassword) {
+    if (isRecognizedAdmin(cleanEmail) && (cleanPassword === 'admin123' || cleanPassword === 'admin')) {
       // allow
     } else {
       throw new Error('ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। দয়া করে সঠিক তথ্য দিন।');
@@ -252,8 +309,9 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
   }
 
   const { password: _, ...safeUser } = matchedUser;
-  // Ensure admin role for admin email
-  if (cleanEmail === 'admin@hopecare.org') {
+
+  // Ensure admin role for recognized admin emails
+  if (isRecognizedAdmin(cleanEmail)) {
     safeUser.role = 'ADMIN';
   }
 

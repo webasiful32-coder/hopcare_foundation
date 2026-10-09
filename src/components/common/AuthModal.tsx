@@ -28,47 +28,29 @@ export const AuthModal: React.FC = () => {
   const [district, setDistrict] = useState('Dhaka');
   const [upazila, setUpazila] = useState('Dhanmondi');
   const [showPassword, setShowPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isAuthOpen) return null;
 
   const currentDistricts = BANGLADESH_DIVISIONS[division] || ['Dhaka'];
 
- const handleLoginSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const authData = await loginUser(email.trim().toLowerCase(), password);
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+
+      const authData = await loginUser(cleanEmail, cleanPassword);
       login(authData.token, authData.user);
       addToast(`স্বাগতম, ${authData.user.fullName}!`, 'success');
       closeAuthModal();
       setCurrentPage('home');
     } catch (err: any) {
       console.error('Login Error Raw:', err);
-
-      // আসল এরর মেসেজটি বের করার ১০০% নির্ভুল নিয়ম
-      let errorMsg = 'লগইন ব্যর্থ হয়েছে';
-
-      if (typeof err === 'string') {
-        errorMsg = err;
-      } else if (err?.response?.data?.error) {
-        errorMsg = err.response.data.error;
-      } else if (err?.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      } else if (err?.error) {
-        errorMsg = err.error;
-      } else if (err?.message && err.message !== '[object Object]') {
-        errorMsg = err.message;
-      } else {
-        // অবজেক্ট হলে সরাসরি পুরো JSON টেক্সট হিসেবে দেখাবে, [object Object] কখনোই হবে না
-        try {
-          errorMsg = JSON.stringify(err?.response?.data || err);
-        } catch {
-          errorMsg = 'ইমেইল বা পাসওয়ার্ড সঠিক নয়';
-        }
-      }
-
+      const errorMsg = getErrorMessage(err, 'ইমেইল অথবা পাসওয়ার্ড সঠিক নয়');
       addToast(errorMsg, 'error');
     } finally {
       setIsSubmitting(false);
@@ -77,14 +59,23 @@ export const AuthModal: React.FC = () => {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password.trim().length < 6) {
+      addToast('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে', 'error');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+
       const authData = await registerUser({
         fullName: fullName.trim(),
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         phone: phone.trim(),
-        password,
+        password: cleanPassword,
         division,
         district,
         upazila
@@ -113,10 +104,10 @@ export const AuthModal: React.FC = () => {
             transition={{ duration: 0.2 }}
             className={`relative w-full ${
               authMode === 'register' ? 'max-w-lg' : 'max-w-md'
-            } bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[95vh] flex flex-col justify-between`}
+            } bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col justify-between`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 bg-blue-600 text-white shadow-xs">
+            <div className="flex items-center justify-between px-5 py-3.5 bg-blue-600 text-white shadow-xs shrink-0">
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-blue-100" />
                 <div>
@@ -140,255 +131,291 @@ export const AuthModal: React.FC = () => {
               </button>
             </div>
 
-            {/* Form Body */}
-            {authMode === 'login' ? (
-              <form onSubmit={handleLoginSubmit} className="p-5 sm:p-6 space-y-3.5">
-                <div>
-                  <label className="block text-xs sm:text-sm font-bold text-slate-900 mb-1">
-                    ইমেইল ঠিকানা (Email Address) *
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-600 absolute left-3 top-3.5" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="আপনার নিবন্ধিত ইমেইল দিন"
-                      className="w-full pl-9 pr-3 py-2.5 text-sm font-semibold text-slate-950 placeholder:text-slate-400 placeholder:font-normal border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden transition"
-                      required
-                    />
+            {/* Form Body - with scroll for mobile keyboard safety */}
+            <div className="overflow-y-auto flex-1 overscroll-contain">
+              {authMode === 'login' ? (
+                <form onSubmit={handleLoginSubmit} className="p-5 sm:p-6 space-y-3.5">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-slate-900 mb-1">
+                      ইমেইল ঠিকানা (Email Address) *
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-600 absolute left-3 top-3.5" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        autoComplete="email"
+                        inputMode="email"
+                        placeholder="আপনার নিবন্ধিত ইমেইল দিন"
+                        className="w-full pl-9 pr-3 py-2.5 text-sm font-semibold text-slate-950 placeholder:text-slate-400 placeholder:font-normal border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden transition"
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs sm:text-sm font-bold text-slate-900 mb-1">
-                    পাসওয়ার্ড (Password) *
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-600 absolute left-3 top-3.5" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="আপনার পাসওয়ার্ড দিন"
-                      className="w-full pl-9 pr-10 py-2.5 text-sm font-semibold text-slate-950 placeholder:text-slate-400 placeholder:font-normal border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden transition"
-                      required
-                    />
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-slate-900 mb-1">
+                      পাসওয়ার্ড (Password) *
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-600 absolute left-3 top-3.5" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        autoComplete="current-password"
+                        placeholder="আপনার পাসওয়ার্ড দিন"
+                        className="w-full pl-9 pr-10 py-2.5 text-sm font-semibold text-slate-950 placeholder:text-slate-400 placeholder:font-normal border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden transition"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-slate-500 hover:text-slate-800 cursor-pointer"
+                        aria-label="Toggle password visibility"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3 px-4 rounded-xl font-black text-white text-sm sm:text-base bg-blue-600 hover:bg-blue-700 transition shadow-md shadow-blue-600/30 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-1"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>যাচাই করা হচ্ছে...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>লগইন করুন</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <div className="text-center pt-2 text-xs font-semibold text-slate-700">
+                    কোনো একাউন্ট নেই?{' '}
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3 text-slate-500 hover:text-slate-800 cursor-pointer"
+                      onClick={() => openAuthModal('register')}
+                      className="font-black text-blue-700 hover:underline cursor-pointer"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      নতুন একাউন্ট খুলুন
+                    </button>
+                  </div>
+                </form>
+              ) : authMode === 'register' ? (
+                <form onSubmit={handleRegisterSubmit} className="p-5 sm:p-6 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-900 mb-1">পুরো নাম *</label>
+                      <div className="relative">
+                        <UserIcon className="w-4 h-4 text-slate-600 absolute left-3 top-3" />
+                        <input
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="আপনার পূর্ণ নাম"
+                          className="w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-900 mb-1">ফোন নম্বর *</label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 text-slate-600 absolute left-3 top-3" />
+                        <input
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="017XXXXXXXX"
+                          className="w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-900 mb-1">ইমেইল *</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        autoComplete="email"
+                        inputMode="email"
+                        placeholder="user@example.com"
+                        className="w-full px-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-900 mb-1">পাসওয়ার্ড *</label>
+                      <div className="relative">
+                        <input
+                          type={showRegPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          autoComplete="new-password"
+                          placeholder="কমপক্ষে ৬ অক্ষর"
+                          className="w-full pl-3 pr-9 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRegPassword(!showRegPassword)}
+                          className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-800 cursor-pointer"
+                          aria-label="Toggle password visibility"
+                        >
+                          {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Location Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-900 mb-1">বিভাগ *</label>
+                      <select
+                        value={division}
+                        onChange={(e) => {
+                          const div = e.target.value;
+                          setDivision(div);
+                          const dists = BANGLADESH_DIVISIONS[div] || ['Dhaka'];
+                          setDistrict(dists[0]);
+                          setUpazila((DISTRICT_UPAZILAS[dists[0]] || ['Sadar'])[0]);
+                        }}
+                        className="w-full px-2 py-2 text-xs font-semibold text-slate-900 border-2 border-slate-300 rounded-xl bg-white focus:border-blue-600 focus:outline-hidden"
+                      >
+                        {Object.keys(BANGLADESH_DIVISIONS).map((div) => (
+                          <option key={div} value={div}>
+                            {DIVISION_NAMES_BN[div] ? `${DIVISION_NAMES_BN[div]} (${div})` : div}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-900 mb-1">জেলা *</label>
+                      <select
+                        value={district}
+                        onChange={(e) => {
+                          const dist = e.target.value;
+                          setDistrict(dist);
+                          setUpazila((DISTRICT_UPAZILAS[dist] || ['Sadar'])[0]);
+                        }}
+                        className="w-full px-2 py-2 text-xs font-semibold text-slate-900 border-2 border-slate-300 rounded-xl bg-white focus:border-blue-600 focus:outline-hidden"
+                      >
+                        {currentDistricts.map((d) => (
+                          <option key={d} value={d}>
+                            {DISTRICT_NAMES_BN[d] ? `${DISTRICT_NAMES_BN[d]} (${d})` : d}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-900 mb-1">উপজেলা *</label>
+                      <select
+                        value={upazila}
+                        onChange={(e) => setUpazila(e.target.value)}
+                        className="w-full px-2 py-2 text-xs font-semibold text-slate-900 border-2 border-slate-300 rounded-xl bg-white focus:border-blue-600 focus:outline-hidden"
+                      >
+                        {(DISTRICT_UPAZILAS[district] || ['Sadar']).map((upz) => (
+                          <option key={upz} value={upz}>
+                            {upz}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3 px-4 rounded-xl font-black text-white text-sm sm:text-base bg-blue-600 hover:bg-blue-700 transition shadow-md shadow-blue-600/30 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-1"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>নিবন্ধন তৈরি হচ্ছে...</span>
+                      </>
+                    ) : (
+                      <span>নিবন্ধন সম্পন্ন করুন</span>
+                    )}
+                  </button>
+
+                  <div className="text-center pt-1 text-xs font-semibold text-slate-700">
+                    ইতিমধ্যে একাউন্ট আছে?{' '}
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('login')}
+                      className="font-black text-blue-700 hover:underline cursor-pointer"
+                    >
+                      লগইন করুন
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="p-5 sm:p-6 space-y-3.5">
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">
+                    আপনার নিবন্ধিত ইমেইল ঠিকানা দিন, আমরা পাসওয়ার্ড পুনরুদ্ধারের নির্দেশনা পাঠাবো।
+                  </p>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    placeholder="আপনার ইমেইল ঠিকানা"
+                    className="w-full px-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addToast(`রিসেট নির্দেশিকা পাঠানো হয়েছে ${email || 'আপনার ইমেইলে'}.`, 'success');
+                      openAuthModal('login');
+                    }}
+                    className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-extrabold hover:bg-blue-700 transition cursor-pointer"
+                  >
+                    রিসেট লিংক পাঠান
+                  </button>
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('login')}
+                      className="text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                    >
+                      ← ফিরে যান লগইন পেজে
                     </button>
                   </div>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3 px-4 rounded-xl font-black text-white text-sm sm:text-base bg-blue-600 hover:bg-blue-700 transition shadow-md shadow-blue-600/30 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-1"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>যাচাই করা হচ্ছে...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>লগইন করুন</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-
-                <div className="text-center pt-2 text-xs font-semibold text-slate-700">
-                  কোনো একাউন্ট নেই?{' '}
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal('register')}
-                    className="font-black text-blue-700 hover:underline cursor-pointer"
-                  >
-                    নতুন একাউন্ট খুলুন
-                  </button>
-                </div>
-              </form>
-            ) : authMode === 'register' ? (
-              <form onSubmit={handleRegisterSubmit} className="p-5 sm:p-6 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">পুরো নাম *</label>
-                    <div className="relative">
-                      <UserIcon className="w-4 h-4 text-slate-600 absolute left-3 top-3" />
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="আপনার পূর্ণ নাম"
-                        className="w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">ফোন নম্বর *</label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-slate-600 absolute left-3 top-3" />
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="017XXXXXXXX"
-                        className="w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">ইমেইল *</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="user@example.com"
-                      className="w-full px-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">পাসওয়ার্ড *</label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="কমপক্ষে ৬ অক্ষর"
-                      className="w-full px-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Location Grid */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">বিভাগ *</label>
-                    <select
-                      value={division}
-                      onChange={(e) => {
-                        const div = e.target.value;
-                        setDivision(div);
-                        const dists = BANGLADESH_DIVISIONS[div] || ['Dhaka'];
-                        setDistrict(dists[0]);
-                        setUpazila((DISTRICT_UPAZILAS[dists[0]] || ['Sadar'])[0]);
-                      }}
-                      className="w-full px-2 py-2 text-xs font-semibold text-slate-900 border-2 border-slate-300 rounded-xl bg-white focus:border-blue-600 focus:outline-hidden"
-                    >
-                      {Object.keys(BANGLADESH_DIVISIONS).map((div) => (
-                        <option key={div} value={div}>
-                          {DIVISION_NAMES_BN[div] ? `${DIVISION_NAMES_BN[div]} (${div})` : div}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">জেলা *</label>
-                    <select
-                      value={district}
-                      onChange={(e) => {
-                        const dist = e.target.value;
-                        setDistrict(dist);
-                        setUpazila((DISTRICT_UPAZILAS[dist] || ['Sadar'])[0]);
-                      }}
-                      className="w-full px-2 py-2 text-xs font-semibold text-slate-900 border-2 border-slate-300 rounded-xl bg-white focus:border-blue-600 focus:outline-hidden"
-                    >
-                      {currentDistricts.map((d) => (
-                        <option key={d} value={d}>
-                          {DISTRICT_NAMES_BN[d] ? `${DISTRICT_NAMES_BN[d]} (${d})` : d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-900 mb-1">উপজেলা *</label>
-                    <select
-                      value={upazila}
-                      onChange={(e) => setUpazila(e.target.value)}
-                      className="w-full px-2 py-2 text-xs font-semibold text-slate-900 border-2 border-slate-300 rounded-xl bg-white focus:border-blue-600 focus:outline-hidden"
-                    >
-                      {(DISTRICT_UPAZILAS[district] || ['Sadar']).map((upz) => (
-                        <option key={upz} value={upz}>
-                          {upz}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3 px-4 rounded-xl font-black text-white text-sm sm:text-base bg-blue-600 hover:bg-blue-700 transition shadow-md shadow-blue-600/30 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-1"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>নিবন্ধন তৈরি হচ্ছে...</span>
-                    </>
-                  ) : (
-                    <span>নিবন্ধন সম্পন্ন করুন</span>
-                  )}
-                </button>
-
-                <div className="text-center pt-1 text-xs font-semibold text-slate-700">
-                  ইতিমধ্যে একাউন্ট আছে?{' '}
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal('login')}
-                    className="font-black text-blue-700 hover:underline cursor-pointer"
-                  >
-                    লগইন করুন
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="p-5 sm:p-6 space-y-3.5">
-                <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">
-                  আপনার নিবন্ধিত ইমেইল ঠিকানা দিন, আমরা পাসওয়ার্ড পুনরুদ্ধারের নির্দেশনা পাঠাবো।
-                </p>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="আপনার ইমেইল ঠিকানা"
-                  className="w-full px-3 py-2 text-sm font-semibold text-slate-950 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    addToast(`রিসেট নির্দেশিকা পাঠানো হয়েছে ${email || 'আপনার ইমেইলে'}.`, 'success');
-                    openAuthModal('login');
-                  }}
-                  className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-extrabold hover:bg-blue-700 transition cursor-pointer"
-                >
-                  রিসেট লিংক পাঠান
-                </button>
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => openAuthModal('login')}
-                    className="text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
-                  >
-                    ← ফিরে যান লগইন পেজে
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
         </div>
       )}
