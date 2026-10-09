@@ -189,39 +189,43 @@ export const BloodDonorsPage: React.FC = () => {
         </div>
       </div> */}
 
-      {/* Blood Group Fast Filter */}
-      <div className="space-y-2.5 w-full max-w-full min-w-0">
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block whitespace-nowrap shrink-0">
-          Filter by Blood Group:
-        </label>
-        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 w-full max-w-full min-w-0 no-scrollbar overscroll-contain">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setSelectedGroup('All')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition cursor-pointer border ${
-              selectedGroup === 'All'
-                ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            All Groups
-          </motion.button>
-          {BLOOD_GROUPS.map((bg) => (
+      
+     {/* Blood Group Fast Filter */}
+        <div className="space-y-2 w-full">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+            Filter by Blood Group:
+          </label>
+          
+          {/* flex-wrap gap-2: সব রক্তের গ্রুপ ২টি লাইনে সুন্দরভাবে থাকবে */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              key={bg}
-              onClick={() => setSelectedGroup(bg)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition cursor-pointer border ${
-                selectedGroup === bg
+              onClick={() => setSelectedGroup('All')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                selectedGroup === 'All'
                   ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
               }`}
             >
-              {bg}
+              All Groups
             </motion.button>
-          ))}
+
+            {BLOOD_GROUPS.map((bg) => (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                key={bg}
+                onClick={() => setSelectedGroup(bg)}
+                className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                  selectedGroup === bg
+                    ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {bg}
+              </motion.button>
+            ))}
+          </div>
         </div>
-      </div>
 
       {/* Geographic & Availability Filters */}
       <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">

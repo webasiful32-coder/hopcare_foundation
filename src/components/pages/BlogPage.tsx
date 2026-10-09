@@ -101,7 +101,7 @@ export const BlogPage: React.FC = () => {
           </div>
 
           {/* Search & Category Filter */}
-          <div className="space-y-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs">
+          {/*<div className="space-y-4 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
@@ -128,7 +128,38 @@ export const BlogPage: React.FC = () => {
                 </button>
               ))}
             </div>
+          </div> */}
+
+          <div className="space-y-4 bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs w-full max-w-full min-w-0">
+          {/* সার্চ ইনপুট */}
+          <div className="relative w-full">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search articles by title, blood guidelines, or topic..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500"
+            />
           </div>
+
+          {/* flex-wrap: সব ক্যাটাগরি এক নজরে চোখের সামনে থাকবে, ডানে-বামে টানা লাগবে না */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full pt-0.5">
+            {categories.map((c) => (
+              <button
+                key={c}
+                onClick={() => setSelectedCategory(c)}
+                className={`whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  selectedCategory === c
+                    ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((post) => (

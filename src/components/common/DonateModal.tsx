@@ -4,7 +4,6 @@ import { Campaign, PaymentGateway } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
-  Heart,
   ShieldCheck,
   Check,
   Sparkles,
@@ -12,21 +11,20 @@ import {
   Copy,
   CheckCircle2,
   Smartphone,
-  Info,
 } from 'lucide-react';
 
 const PRESET_AMOUNTS = [100, 500, 1000, 5000, 10000];
 
 /* =========================================================
-   PAYMENT NUMBERS  (শুধু এই দুইটা number change করবে)
+   PAYMENT NUMBERS (শুধু এই দুইটা number change করবে)
    ========================================================= */
-const BKASH_NUMBER = '01XXXXXXXXX';
-const NAGAD_NUMBER = '01XXXXXXXXX';
+const BKASH_NUMBER = '01983461138';
+const NAGAD_NUMBER = '01983461138';
 /* ========================================================= */
 
 const inputCls =
-  'w-full px-3 py-2 text-sm border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500';
-const labelCls = 'block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1';
+  'w-full px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500';
+const labelCls = 'block text-[10px] sm:text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-0.5 sm:mb-1';
 
 export const DonateModal: React.FC = () => {
   const { isDonateOpen, closeDonateModal, selectedCampaign, user, addToast, openReceiptModal } = useApp();
@@ -75,7 +73,7 @@ export const DonateModal: React.FC = () => {
     setCopied(false);
   }, [gateway]);
 
-  // Lock background scroll while the modal is open
+  // Lock background scroll while modal is open
   useEffect(() => {
     if (!isDonateOpen) return;
     const previous = document.body.style.overflow;
@@ -164,51 +162,87 @@ export const DonateModal: React.FC = () => {
   return (
     <AnimatePresence>
       {isDonateOpen && (
-        <div className="fixed inset-0 z-[200] flex items-start sm:items-center justify-center p-2 sm:p-4 bg-indigo-950/40 backdrop-blur-md">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
           <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 15 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 15 }}
-            transition={{ duration: 0.25 }}
-            className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)]"
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col my-auto max-h-[96dvh]"
           >
-            {/* Header */}
-            <div className="shrink-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-3 bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 text-white">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 shrink-0 rounded-lg bg-white/20 flex items-center justify-center">
-                  <Heart className="w-5 h-5 fill-white" />
+            {/* Header - অ্যানিমেটেড লোগো সহ স্লিম লুক */}
+            <div className="shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 text-white">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="relative shrink-0">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.85, y: -8 }}
+                    animate={{
+                      opacity: 1,
+                      scale: 1,
+                      y: [0, -2, 0],
+                    }}
+                    transition={{
+                      opacity: { duration: 0.5 },
+                      scale: { duration: 0.5, ease: 'easeOut' },
+                      y: {
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      },
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    className="relative w-7 h-7 sm:w-10 sm:h-10 2xl:w-12 2xl:h-12 shrink-0 rounded-xl overflow-hidden bg-white shadow-md ring-1 ring-emerald-100 cursor-pointer"
+                  >
+                    <img
+                      src="/logo.png"
+                      alt="Shohayota Foundation"
+                      className="w-full h-full object-contain p-0.5"
+                    />
+
+                    {/* Small live indicator */}
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.4, duration: 0.3 }}
+                      className="absolute right-0 bottom-0 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white flex items-center justify-center shadow-xs"
+                    >
+                      <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-500" />
+                    </motion.span>
+                  </motion.div>
                 </div>
+
                 <div className="min-w-0">
-                  <h3 className="font-bold text-base sm:text-lg leading-tight">Donate to Save Lives</h3>
-                  <p className="text-[11px] sm:text-xs text-sky-100 truncate">
-                    100% transparent donation to verified humanitarian appeals
+                  <h3 className="font-bold text-xs sm:text-base leading-tight">Donate to Save Lives</h3>
+                  <p className="text-[9.5px] sm:text-xs text-sky-100 truncate">
+                    100% transparent donation to verified appeals
                   </p>
                 </div>
               </div>
+
               <button
                 type="button"
                 onClick={closeDonateModal}
                 aria-label="Close donation modal"
-                className="shrink-0 p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                className="shrink-0 p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
 
-            {/* Body: two columns on desktop (no scroll), single scrollable column on phones */}
+            {/* Body: কম্পিউটারে ২ কলাম, মোবাইলে ১ স্ক্রিনে ফিট */}
             <form
               onSubmit={handleSubmit}
-              className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5"
+              className="p-2.5 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 md:gap-5 overflow-y-auto sm:overflow-hidden max-h-[calc(96dvh-45px)]"
             >
               {/* ============ LEFT COLUMN ============ */}
-              <div className="space-y-3.5">
+              <div className="space-y-1.5 sm:space-y-3">
                 {/* Campaign */}
                 <div>
                   <label className={labelCls}>Select Campaign</label>
                   <select
                     value={targetCampaignId}
                     onChange={(e) => setTargetCampaignId(e.target.value)}
-                    className={inputCls}
+                    className={`${inputCls} py-1`}
                   >
                     {campaigns.length === 0 && <option value="">No campaigns available</option>}
                     {campaigns.map((c) => (
@@ -222,7 +256,7 @@ export const DonateModal: React.FC = () => {
                 {/* Amount */}
                 <div>
                   <label className={labelCls}>Select Amount (BDT / ৳)</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2">
                     {PRESET_AMOUNTS.map((amt) => {
                       const isSelected = !isCustom && selectedAmount === amt;
                       return (
@@ -233,9 +267,9 @@ export const DonateModal: React.FC = () => {
                             setIsCustom(false);
                             setSelectedAmount(amt);
                           }}
-                          className={`py-2 px-2 rounded-xl text-sm font-semibold border transition text-center ${
+                          className={`py-1 sm:py-2 px-1 rounded-xl text-xs sm:text-sm font-bold border transition text-center cursor-pointer ${
                             isSelected
-                              ? 'bg-sky-600 text-white border-sky-600 shadow-sm shadow-sky-200'
+                              ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
                               : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                           }`}
                         >
@@ -244,10 +278,10 @@ export const DonateModal: React.FC = () => {
                       );
                     })}
 
-                    {/* 6th cell: Custom button turns into an input (same size, no extra height) */}
+                    {/* Custom Amount Button/Input */}
                     {isCustom ? (
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
+                        <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
                           ৳
                         </span>
                         <input
@@ -256,7 +290,7 @@ export const DonateModal: React.FC = () => {
                           placeholder="Min 50"
                           value={customAmount}
                           onChange={(e) => setCustomAmount(e.target.value)}
-                          className="w-full h-full pl-6 pr-1 py-2 text-sm border border-sky-300 bg-sky-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          className="w-full h-full pl-4 pr-1 py-1 text-xs font-bold border border-sky-300 bg-sky-50 rounded-xl focus:outline-none focus:ring-1 focus:ring-sky-500"
                           autoFocus
                         />
                       </div>
@@ -264,7 +298,7 @@ export const DonateModal: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setIsCustom(true)}
-                        className="py-2 px-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition"
+                        className="py-1 sm:py-2 px-1 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                       >
                         Custom
                       </button>
@@ -272,10 +306,10 @@ export const DonateModal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Payment method */}
+                {/* Payment method - মোবাইলে কমপ্যাক্ট ৪ বাটন */}
                 <div>
                   <label className={labelCls}>Choose Payment Method</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-2 gap-1 sm:gap-2">
                     {(['bKash', 'Nagad', 'SSLCommerz', 'Stripe'] as PaymentGateway[]).map((gw) => {
                       const active = gateway === gw;
                       return (
@@ -283,22 +317,18 @@ export const DonateModal: React.FC = () => {
                           type="button"
                           key={gw}
                           onClick={() => setGateway(gw)}
-                          className={`px-3 py-2 rounded-xl border text-left transition ${
+                          className={`px-1 py-1 sm:py-2 rounded-xl border text-center sm:text-left transition cursor-pointer ${
                             active
-                              ? 'border-sky-600 bg-sky-50/70 text-sky-900 ring-2 ring-sky-500/30'
+                              ? 'border-sky-600 bg-sky-50 text-sky-900 ring-1 ring-sky-500'
                               : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs">{gw}</span>
-                            {active && <Check className="w-3.5 h-3.5 text-sky-600" />}
+                          <div className="flex items-center justify-center sm:justify-between">
+                            <span className="font-extrabold text-[11px] sm:text-xs truncate">{gw}</span>
+                            {active && <Check className="w-3 h-3 text-sky-600 hidden sm:block shrink-0" />}
                           </div>
-                          <span className="text-[10px] text-slate-500">
-                            {gw === 'bKash' || gw === 'Nagad'
-                              ? 'Send Money'
-                              : gw === 'SSLCommerz'
-                                ? 'Local Banks'
-                                : 'Visa / Master'}
+                          <span className="text-[9px] text-slate-500 hidden sm:block truncate">
+                            {gw === 'bKash' || gw === 'Nagad' ? 'Send Money' : gw === 'SSLCommerz' ? 'Local Banks' : 'Visa/Master'}
                           </span>
                         </button>
                       );
@@ -306,144 +336,126 @@ export const DonateModal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Trust banner */}
-                <div className="flex items-center gap-2 p-2.5 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-800 text-[11px] leading-4">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                {/* Trust banner (ডেস্কটপে দৃশ্যমান) */}
+                <div className="hidden sm:flex items-center gap-1.5 p-2 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-800 text-[10px] leading-tight">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>Secure 256-bit encrypted checkout. Verified instant official receipt provided.</span>
                 </div>
               </div>
 
               {/* ============ RIGHT COLUMN ============ */}
-              <div className="space-y-3.5">
-                {/* bKash / Nagad send money */}
+              <div className="space-y-1.5 sm:space-y-3">
+                {/* bKash / Nagad Send Money Box (সুপার স্লিম) */}
                 {isMobileBanking && (
-                  <motion.div
-                    key={gateway}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-sky-50 p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="shrink-0 w-7 h-7 rounded-lg bg-white text-emerald-600 shadow-sm flex items-center justify-center">
-                        <Smartphone className="w-4 h-4" />
+                  <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-sky-50/70 p-1.5 sm:p-2.5">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <Smartphone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="font-extrabold text-slate-900 text-xs">
+                          {gateway}: <span className="font-mono text-emerald-700">{paymentNumber}</span>
+                        </span>
                       </div>
-                      <h4 className="font-bold text-slate-900 text-sm">Send Money via {gateway}</h4>
-                    </div>
-
-                    <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                      <span className="break-all text-lg font-bold tracking-wide text-slate-900">
-                        {paymentNumber}
-                      </span>
                       <button
                         type="button"
                         onClick={handleCopyNumber}
-                        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition"
+                        className="shrink-0 flex items-center gap-1 rounded-lg bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700 hover:bg-sky-200 transition cursor-pointer"
                       >
                         {copied ? (
                           <>
-                            <CheckCircle2 className="w-4 h-4" />
+                            <CheckCircle2 className="w-3 h-3" />
                             Copied
                           </>
                         ) : (
                           <>
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3 h-3" />
                             Copy
                           </>
                         )}
                       </button>
                     </div>
 
-                    <p className="mt-2 text-xs leading-5 text-slate-600">
-                      Open <strong>{gateway}</strong> → <strong>Send Money</strong> →{' '}
-                      <strong>৳{effectiveAmount ? effectiveAmount.toLocaleString('en-IN') : '0'}</strong> to this
-                      number, then paste the Transaction ID.
-                    </p>
-
-                    <input
-                      type="text"
-                      placeholder={`${gateway} Transaction ID`}
-                      value={transactionId}
-                      onChange={(e) => setTransactionId(e.target.value)}
-                      className="mt-2 w-full px-3 py-2 text-sm font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                    <p className="mt-1 flex items-center gap-1 text-[10px] text-slate-500">
-                      <Info className="w-3 h-3 shrink-0" />
-                      Enter the exact ID from your payment confirmation.
-                    </p>
-                  </motion.div>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        placeholder={`Paste ${gateway} Transaction ID *`}
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                        className="w-full px-2.5 py-1 text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        required
+                      />
+                    </div>
+                  </div>
                 )}
 
-                {/* Donor information */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
-                      Donor Information
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+                {/* Donor Information (২ কলামে স্লিম গ্রিড) */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className={labelCls}>Donor Info</label>
+                    <label className="flex items-center gap-1 text-[10px] text-slate-600 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={isAnonymous}
                         onChange={(e) => setIsAnonymous(e.target.checked)}
-                        className="rounded text-sky-600 focus:ring-sky-500"
+                        className="rounded text-sky-600 focus:ring-sky-500 h-3 w-3"
                       />
-                      Donate Anonymously
+                      Anonymous
                     </label>
                   </div>
 
-                  <div className="space-y-2">
+                  {!isAnonymous && (
+                    <div className="grid grid-cols-2 gap-1">
+                      <input
+                        type="text"
+                        placeholder="Full Name *"
+                        value={donorName}
+                        onChange={(e) => setDonorName(e.target.value)}
+                        className={`${inputCls} py-1`}
+                        required={!isAnonymous}
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Mobile (+880)"
+                        value={donorPhone}
+                        onChange={(e) => setDonorPhone(e.target.value)}
+                        className={`${inputCls} py-1`}
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                     {!isAnonymous && (
-                      <>
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            placeholder="Full Name"
-                            value={donorName}
-                            onChange={(e) => setDonorName(e.target.value)}
-                            className={inputCls}
-                            required={!isAnonymous}
-                          />
-                          <input
-                            type="email"
-                            placeholder="Email (for receipt)"
-                            value={donorEmail}
-                            onChange={(e) => setDonorEmail(e.target.value)}
-                            className={inputCls}
-                            required={!isAnonymous}
-                          />
-                        </div>
-                        <input
-                          type="tel"
-                          placeholder="Mobile Phone (+880)"
-                          value={donorPhone}
-                          onChange={(e) => setDonorPhone(e.target.value)}
-                          className={inputCls}
-                        />
-                      </>
+                      <input
+                        type="email"
+                        placeholder="Email (for receipt)"
+                        value={donorEmail}
+                        onChange={(e) => setDonorEmail(e.target.value)}
+                        className={`${inputCls} py-1`}
+                      />
                     )}
                     <input
                       type="text"
-                      placeholder="Leave an encouraging message (Optional)"
+                      placeholder="Message (Optional)"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      className={inputCls}
+                      className={`${inputCls} py-1 ${isAnonymous ? 'col-span-2' : ''}`}
                     />
                   </div>
                 </div>
 
-                {/* Action button */}
+                {/* Action button - কনফার্ম ডোনেট */}
                 <button
                   type="submit"
                   disabled={isSubmitting || effectiveAmount <= 0}
-                  className="w-full py-3 px-4 rounded-xl font-bold text-white bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-700 hover:to-emerald-700 transition shadow-lg shadow-sky-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-2 sm:py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm text-white bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-700 hover:to-emerald-700 transition shadow-md shadow-sky-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer mt-1"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Verifying {gateway} Transaction...</span>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Verifying...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4" />
+                      <Sparkles className="w-3.5 h-3.5" />
                       <span>Confirm & Donate ৳{effectiveAmount ? effectiveAmount.toLocaleString('en-IN') : '0'}</span>
                     </>
                   )}

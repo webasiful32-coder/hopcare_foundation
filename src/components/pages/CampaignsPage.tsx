@@ -150,12 +150,17 @@ export const CampaignsPage: React.FC = () => {
           ))}
         </div> */}
         {/* ক্যাটাগরি বাটনগুলোর বাইরের ডিভ */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 w-full max-w-full">
+            {/* flex-wrap দেওয়ার কারণে বাটনগুলো ২ লাইনে সুন্দরভাবে সেজে থাকবে, ডানে টানা লাগবে না */}
+            <div className="flex flex-wrap items-center gap-2 w-full pt-1">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className="px-4 py-2 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition border ..."
+                  className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                    selectedCategory === cat
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
                 >
                   {cat}
                 </button>

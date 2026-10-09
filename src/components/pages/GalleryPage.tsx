@@ -32,12 +32,12 @@ export const GalleryPage: React.FC = () => {
       </div>
 
       {/* Category Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full pt-1 pb-2">
         {categories.map((c) => (
           <button
             key={c}
             onClick={() => setCategory(c)}
-            className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition ${
+            className={`whitespace-nowrap px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
               category === c
                 ? 'bg-teal-600 text-white shadow-xs'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'

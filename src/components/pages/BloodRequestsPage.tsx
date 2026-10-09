@@ -97,15 +97,15 @@ export const BloodRequestsPage: React.FC = () => {
             ))}
           </div> */}
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 w-full max-w-full min-w-0 no-scrollbar">
-          {/* whitespace-nowrap shrink-0 এর কারণে 'Group:' আর কখনোই খাড়া ভাঙবে না */}
-          <span className="text-xs font-bold text-slate-500 mr-1 whitespace-nowrap shrink-0">
+        {/* flex flex-wrap: ডানে-বামে স্ক্রোল ছাড়াই সব রক্তের গ্রুপ লাইনে লাইনে দেখা যাবে */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full pt-1">
+          <span className="text-xs font-extrabold text-slate-600 mr-1 shrink-0">
             Group:
           </span>
 
           <button
             onClick={() => setSelectedGroup('All')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
               selectedGroup === 'All' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
@@ -116,7 +116,7 @@ export const BloodRequestsPage: React.FC = () => {
             <button
               key={bg}
               onClick={() => setSelectedGroup(bg)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 selectedGroup === bg ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
