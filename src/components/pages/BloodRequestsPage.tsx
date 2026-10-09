@@ -74,7 +74,7 @@ export const BloodRequestsPage: React.FC = () => {
         className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3"
       >
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {/*<div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             <span className="text-xs font-bold text-slate-400 mr-1">Group:</span>
             <button
               onClick={() => setSelectedGroup('All')}
@@ -95,7 +95,35 @@ export const BloodRequestsPage: React.FC = () => {
                 {bg}
               </button>
             ))}
-          </div>
+          </div> */}
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 w-full max-w-full min-w-0 no-scrollbar">
+          {/* whitespace-nowrap shrink-0 এর কারণে 'Group:' আর কখনোই খাড়া ভাঙবে না */}
+          <span className="text-xs font-bold text-slate-500 mr-1 whitespace-nowrap shrink-0">
+            Group:
+          </span>
+
+          <button
+            onClick={() => setSelectedGroup('All')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition cursor-pointer ${
+              selectedGroup === 'All' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            All
+          </button>
+
+          {BLOOD_GROUPS.map((bg) => (
+            <button
+              key={bg}
+              onClick={() => setSelectedGroup(bg)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition cursor-pointer ${
+                selectedGroup === bg ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {bg}
+            </button>
+          ))}
+        </div>
 
           <div className="flex items-center gap-2 ml-auto">
             <select

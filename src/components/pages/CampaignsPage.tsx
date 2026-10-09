@@ -133,7 +133,7 @@ export const CampaignsPage: React.FC = () => {
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+        {/*<div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
           {CATEGORIES.map((cat) => (
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -148,8 +148,22 @@ export const CampaignsPage: React.FC = () => {
               {cat}
             </motion.button>
           ))}
-        </div>
+        </div> */}
+        {/* ক্যাটাগরি বাটনগুলোর বাইরের ডিভ */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 w-full max-w-full">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className="px-4 py-2 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition border ..."
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
       </motion.div>
+
+
 
       {/* Campaigns Grid or Clean Empty State */}
       {filtered.length === 0 ? (
