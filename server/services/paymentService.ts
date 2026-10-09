@@ -1,4 +1,4 @@
-import { PaymentGateway, PaymentStatus, PaymentTransaction } from '../../src/types';
+import { PaymentGateway, PaymentStatus, PaymentTransaction } from '../../src/types/index.js';
 
 export interface PaymentInitializationResult {
   transactionId: string;

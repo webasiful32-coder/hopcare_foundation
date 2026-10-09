@@ -13,7 +13,7 @@ import {
   AppNotification,
   AuditLog,
   PaymentTransaction
-} from '../../src/types';
+} from '../../src/types/index.js';
 
 import {
   INITIAL_CAMPAIGNS,
@@ -23,9 +23,9 @@ import {
   INITIAL_BLOG_POSTS,
   INITIAL_GALLERY_ITEMS,
   INITIAL_VOLUNTEERS
-} from '../../src/data/bangladeshData';
+} from '../../src/data/bangladeshData.js';
 
-import { authService } from '../services/authService';
+import { authService } from '../services/authService.js';
 
 export class DatabaseStore {
   public users: Map<string, User & { passwordHash: string }> = new Map();

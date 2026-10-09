@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { Campaign, BloodDonor, BloodRequest } from '../../src/types';
+import { Campaign, BloodDonor, BloodRequest } from '../../src/types/index.js';
 
 export class AIService {
   private client: GoogleGenAI | null = null;

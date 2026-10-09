@@ -3,13 +3,13 @@ import path from 'path';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 
-import { dbStore } from './server/db/store';
-import { postgresService } from './server/db/postgres';
-import { authService } from './server/services/authService';
-import { paymentService } from './server/services/paymentService';
-import { bloodMatchingService } from './server/services/bloodMatchingService';
-import { aiService } from './server/services/aiService';
-import { UserRole } from './src/types';
+import { dbStore } from './server/db/store.js';
+import { postgresService } from './server/db/postgres.js';
+import { authService } from './server/services/authService.js';
+import { paymentService } from './server/services/paymentService.js';
+import { bloodMatchingService } from './server/services/bloodMatchingService.js';
+import { aiService } from './server/services/aiService.js';
+import { UserRole } from './src/types/index.js';
 
 dotenv.config();
 

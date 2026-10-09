@@ -1,4 +1,4 @@
-import { BloodGroup, BloodDonor, BloodRequest } from '../../src/types';
+import { BloodGroup, BloodDonor, BloodRequest } from '../../src/types/index.js';
 
 export const COMPATIBLE_DONORS_FOR_RECIPIENT: Record<BloodGroup, BloodGroup[]> = {
   'A+': ['A+', 'A-', 'O+', 'O-'],

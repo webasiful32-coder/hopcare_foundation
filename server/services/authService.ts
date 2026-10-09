@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { User, UserRole } from '../../src/types';
+import { User, UserRole } from '../../src/types/index.js';
 
 export class AuthService {
   // Hash password using PBKDF2 with unique salt
