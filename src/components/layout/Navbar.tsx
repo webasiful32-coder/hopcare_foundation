@@ -37,13 +37,16 @@ export const Navbar: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Admin check
-  const isAdmin = String(user?.role ?? '')
-    .trim()
-    .toUpperCase()
-    .includes('ADMIN');
+  // Robust Admin check (supports role 'ADMIN', 'admin', 'SUPER_ADMIN' or admin email)
+  const isAdmin = Boolean(
+    user && (
+      String(user.role ?? '').trim().toUpperCase().includes('ADMIN') ||
+      user.email?.toLowerCase().trim().startsWith('admin') ||
+      user.email?.toLowerCase().trim() === 'admin@hopecare.org'
+    )
+  );
 
-  const navLinks = [
+  const baseNavLinks = [
     { id: 'home', label: lang === 'bn' ? 'হোম' : 'Home' },
     { id: 'campaigns', label: lang === 'bn' ? 'ক্যাম্পেইন' : 'Causes' },
     { id: 'blood-donors', label: lang === 'bn' ? 'রক্তদাতা' : 'Blood Donors' },
@@ -54,6 +57,11 @@ export const Navbar: React.FC = () => {
     { id: 'about', label: lang === 'bn' ? 'আমাদের কথা' : 'About' },
     { id: 'contact', label: lang === 'bn' ? 'যোগাযোগ' : 'Contact' },
   ];
+
+  // Dynamically include Admin in navLinks if user is Admin
+  const navLinks = isAdmin
+    ? [...baseNavLinks, { id: 'admin', label: lang === 'bn' ? 'অ্যাডমিন প্যানেল' : 'Admin Panel' }]
+    : baseNavLinks;
 
   const handleNavClick = (pageId: string) => {
     setCurrentPage(pageId);
@@ -125,7 +133,6 @@ export const Navbar: React.FC = () => {
 
             {/* =================================================
                 LOGO + FULL BRAND TEXT + বাংলা স্লোগান
-                (can shrink on very small phones, never on desktop)
             ================================================== */}
             <button
               onClick={() => handleNavClick('home')}
@@ -177,7 +184,7 @@ export const Navbar: React.FC = () => {
             </button>
 
             {/* =================================================
-                DESKTOP NAVIGATION (1280px+ Laptops & Desktops)
+                DESKTOP NAVIGATION (Laptops & Desktops)
             ================================================== */}
             <nav className="hidden xl:flex flex-1 items-center justify-center min-w-0 px-1">
               <div className="flex items-center gap-0.5 2xl:gap-1.5 min-w-0">
@@ -190,7 +197,11 @@ export const Navbar: React.FC = () => {
                       onClick={() => handleNavClick(link.id)}
                       className={`relative px-2 2xl:px-3 py-2 rounded-xl text-[12px] 2xl:text-[13px] font-bold whitespace-nowrap transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 shrink-0 ${
                         isActive
-                          ? 'bg-teal-50 text-teal-700'
+                          ? link.id === 'admin'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-teal-50 text-teal-700'
+                          : link.id === 'admin'
+                          ? 'text-purple-700 hover:text-purple-800 hover:bg-purple-50 font-extrabold'
                           : 'text-slate-600 hover:text-teal-700 hover:bg-slate-50'
                       }`}
                     >
@@ -199,7 +210,11 @@ export const Navbar: React.FC = () => {
                       {isActive && (
                         <motion.span
                           layoutId="navbar-active"
-                          className="absolute left-1/2 -translate-x-1/2 bottom-0.5 w-6 2xl:w-7 h-[3px] rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500"
+                          className={`absolute left-1/2 -translate-x-1/2 bottom-0.5 w-6 2xl:w-7 h-[3px] rounded-full ${
+                            link.id === 'admin'
+                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600'
+                              : 'bg-gradient-to-r from-cyan-500 to-emerald-500'
+                          }`}
                         />
                       )}
                     </button>
@@ -283,16 +298,31 @@ export const Navbar: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {/* 2. Admin (Desktop 1536px+) */}
+              {/* 2. Admin Panel Button:
+                  - LAPTOPS/TABLETS (md:flex): Full button with text and icon
+                  - MOBILE (< md): Compact purple icon badge directly in the header */}
               {isAdmin && (
-                <button
-                  onClick={() => handleNavClick('admin')}
-                  className="hidden 2xl:flex items-center gap-1.5 h-10 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-md shadow-purple-600/20 transition cursor-pointer whitespace-nowrap shrink-0"
-                  title="Admin Dashboard"
-                >
-                  <ShieldAlert className="w-4 h-4 shrink-0" />
-                  <span>Admin Panel</span>
-                </button>
+                <>
+                  {/* Laptop & Tablet visible button */}
+                  <button
+                    onClick={() => handleNavClick('admin')}
+                    className="hidden md:flex items-center gap-1.5 h-8 sm:h-10 px-2.5 sm:px-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-[11px] sm:text-xs font-extrabold shadow-md shadow-purple-600/20 transition cursor-pointer whitespace-nowrap shrink-0"
+                    title="Admin Dashboard"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                    <span>Admin Panel</span>
+                  </button>
+
+                  {/* Mobile header direct shortcut icon button */}
+                  <button
+                    onClick={() => handleNavClick('admin')}
+                    className="flex md:hidden items-center justify-center w-7.5 h-7.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm hover:opacity-90 transition shrink-0"
+                    title="Admin Dashboard"
+                    aria-label="Admin Dashboard"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                  </button>
+                </>
               )}
 
               {/* 3. User Avatar Button */}
@@ -313,7 +343,7 @@ export const Navbar: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="hidden 2xl:block text-left min-w-0 max-w-[90px]">
+                    <div className="hidden xl:block text-left min-w-0 max-w-[100px]">
                       <span className="text-[11px] font-bold text-slate-900 block truncate">
                         {user.fullName.split(' ')[0]}
                       </span>
@@ -351,10 +381,10 @@ export const Navbar: React.FC = () => {
                         {isAdmin && (
                           <button
                             onClick={() => handleNavClick('admin')}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-purple-50 transition min-w-0"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left bg-purple-50 hover:bg-purple-100 transition min-w-0 mt-1"
                           >
-                            <span className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-                              <ShieldAlert className="w-4 h-4 text-purple-600" />
+                            <span className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center shrink-0 text-white">
+                              <ShieldAlert className="w-4 h-4" />
                             </span>
                             <span className="text-xs font-bold text-purple-700 truncate">Admin Dashboard</span>
                           </button>
@@ -377,12 +407,12 @@ export const Navbar: React.FC = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                /* Sign in (Desktop) */
+                /* Sign in (Desktop & Laptop) */
                 <button
                   onClick={() => handleNavClick('auth')}
-                  className="hidden lg:flex items-center gap-1.5 h-9 sm:h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 hover:text-teal-700 hover:bg-teal-50 text-xs font-extrabold transition cursor-pointer whitespace-nowrap shrink-0"
+                  className="hidden sm:flex items-center gap-1.5 h-8 sm:h-10 px-2.5 sm:px-3.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:text-teal-700 hover:bg-teal-50 text-xs font-extrabold transition cursor-pointer whitespace-nowrap shrink-0"
                 >
-                  <UserIcon className="w-4 h-4 shrink-0" />
+                  <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                   <span>{t.signIn}</span>
                 </button>
               )}
@@ -454,12 +484,18 @@ export const Navbar: React.FC = () => {
                     onClick={() => handleNavClick(link.id)}
                     className={`w-full min-w-0 flex items-center justify-between gap-2 px-3.5 py-3 sm:py-3.5 rounded-xl text-left text-xs sm:text-sm font-bold transition-all border ${
                       isActive
-                        ? 'bg-teal-50 text-teal-700 border-teal-200'
+                        ? link.id === 'admin'
+                          ? 'bg-purple-100 text-purple-800 border-purple-300'
+                          : 'bg-teal-50 text-teal-700 border-teal-200'
+                        : link.id === 'admin'
+                        ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
                         : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-teal-200 hover:text-teal-700'
                     }`}
                   >
                     <span className="truncate">{link.label}</span>
-                    {isActive && <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />}
+                    {isActive && (
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${link.id === 'admin' ? 'bg-purple-600' : 'bg-teal-500'}`} />
+                    )}
                   </button>
                 );
               })}
@@ -496,7 +532,7 @@ export const Navbar: React.FC = () => {
                     handleNavClick('admin');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs sm:text-sm font-extrabold shadow-sm flex items-center justify-center gap-2"
+                  className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs sm:text-sm font-extrabold shadow-md flex items-center justify-center gap-2"
                 >
                   <ShieldAlert className="w-4 h-4 shrink-0" />
                   <span className="truncate">Admin Dashboard</span>
