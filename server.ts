@@ -333,7 +333,7 @@ const logAudit = (req: Request, action: string, entity: string, entityId: string
     createdAt: now
   };
   dbStore.auditLogs.set(id, log);
-  neon(
+  return neon(
     'Audit Save',
     `INSERT INTO audit_logs (id, admin_id, admin_name, action, entity, entity_id, details, ip_address)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -402,7 +402,7 @@ const requireRole = (...roles: UserRole[]) => {
 // ============================================================
 // Database Health & Status Endpoint
 // ============================================================
-app.get('/api/health/db-status', (req, res) => {
+app.get('/api/health/db-status', async (req, res) => {
   res.json(postgresService.getStatus());
 });
 
@@ -541,13 +541,13 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ token, user: safeUser });
 });
 
-app.get('/api/auth/me', authenticate, (req, res) => {
+app.get('/api/auth/me', authenticate, async (req, res) => {
   const user = (req as any).user;
   const { passwordHash: _, ...safeUser } = user;
   res.json({ user: safeUser });
 });
 
-app.post('/api/auth/forgot-password', (req, res) => {
+app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   // Architecture ready for email gateway
   res.json({ message: `Password reset instructions dispatched to ${email || 'your email'}.` });
@@ -556,7 +556,7 @@ app.post('/api/auth/forgot-password', (req, res) => {
 // ============================================================
 // Campaigns API
 // ============================================================
-app.get('/api/campaigns', (req, res) => {
+app.get('/api/campaigns', async (req, res) => {
   const { category, status, search } = req.query;
   let list = Array.from(dbStore.campaigns.values());
 
@@ -574,7 +574,7 @@ app.get('/api/campaigns', (req, res) => {
   res.json(list);
 });
 
-app.get('/api/campaigns/:id', (req, res) => {
+app.get('/api/campaigns/:id', async (req, res) => {
   const campaign = dbStore.campaigns.get(req.params.id);
   if (!campaign) {
     return res.status(404).json({ error: 'Campaign not found' });
@@ -582,7 +582,7 @@ app.get('/api/campaigns/:id', (req, res) => {
   res.json(campaign);
 });
 
-app.post('/api/campaigns', authenticate, requireRole('ADMIN'), (req, res) => {
+app.post('/api/campaigns', authenticate, requireRole('ADMIN'), async (req, res) => {
   const { title, category, shortDescription, fullDescription, targetAmount, featuredImageUrl, deadline, organizerName, isUrgent } = req.body;
   if (!title || !category) {
     return res.status(400).json({ error: 'Title and category are required' });
@@ -611,13 +611,13 @@ app.post('/api/campaigns', authenticate, requireRole('ADMIN'), (req, res) => {
   };
 
   dbStore.campaigns.set(id, newCampaign);
-  saveCampaignToNeon(newCampaign);
-  logAudit(req, 'CREATE_CAMPAIGN', 'campaign', id, `Created campaign "${title}"`);
+  await saveCampaignToNeon(newCampaign);
+  await logAudit(req, 'CREATE_CAMPAIGN', 'campaign', id, `Created campaign "${title}"`);
 
   res.status(201).json(newCampaign);
 });
 
-app.put('/api/campaigns/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.put('/api/campaigns/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const campaign = dbStore.campaigns.get(req.params.id);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
 
@@ -635,19 +635,19 @@ app.put('/api/campaigns/:id', authenticate, requireRole('ADMIN'), (req, res) => 
   campaign.updatedAt = new Date().toISOString();
 
   dbStore.campaigns.set(campaign.id, campaign);
-  saveCampaignToNeon(campaign);
-  logAudit(req, 'UPDATE_CAMPAIGN', 'campaign', campaign.id, `Updated campaign "${campaign.title}"`);
+  await saveCampaignToNeon(campaign);
+  await logAudit(req, 'UPDATE_CAMPAIGN', 'campaign', campaign.id, `Updated campaign "${campaign.title}"`);
 
   res.json(campaign);
 });
 
-app.delete('/api/campaigns/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.delete('/api/campaigns/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const campaign = dbStore.campaigns.get(req.params.id);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
 
   dbStore.campaigns.delete(req.params.id);
-  neon('Campaign Delete', 'DELETE FROM campaigns WHERE id=$1', [req.params.id]);
-  logAudit(req, 'DELETE_CAMPAIGN', 'campaign', req.params.id, `Deleted campaign "${campaign.title}"`);
+  await neon('Campaign Delete', 'DELETE FROM campaigns WHERE id=$1', [req.params.id]);
+  await logAudit(req, 'DELETE_CAMPAIGN', 'campaign', req.params.id, `Deleted campaign "${campaign.title}"`);
 
   res.json({ success: true, message: 'Campaign deleted successfully' });
 });
@@ -756,7 +756,8 @@ app.post('/api/donations', async (req, res) => {
     dbStore.paymentTransactions.set(paymentResult.paymentTx.id, paymentResult.paymentTx);
 
     // Persist to Neon (campaign first, because donations reference it)
-    saveCampaignToNeon(campaign).then(() => saveDonationToNeon(donation));
+    await saveCampaignToNeon(campaign);
+    await saveDonationToNeon(donation);
 
     // Create Notification
     const notifId = 'notif-' + Date.now();
@@ -788,7 +789,7 @@ app.post('/api/donations', async (req, res) => {
   }
 });
 
-app.get('/api/donations', (req, res) => {
+app.get('/api/donations', async (req, res) => {
   const { userId, campaignId } = req.query;
   let list = Array.from(dbStore.donations.values());
   if (userId) {
@@ -801,7 +802,7 @@ app.get('/api/donations', (req, res) => {
 });
 
 // ---- Admin: review and approve manual (bKash / Nagad) donations ----
-app.get('/api/admin/donations', authenticate, requireRole('ADMIN'), (req, res) => {
+app.get('/api/admin/donations', authenticate, requireRole('ADMIN'), async (req, res) => {
   const { status } = req.query;
   let list = Array.from(dbStore.donations.values());
   if (status && status !== 'All') {
@@ -810,7 +811,7 @@ app.get('/api/admin/donations', authenticate, requireRole('ADMIN'), (req, res) =
   res.json(list.reverse());
 });
 
-app.patch('/api/admin/donations/:id/status', authenticate, requireRole('ADMIN'), (req, res) => {
+app.patch('/api/admin/donations/:id/status', authenticate, requireRole('ADMIN'), async (req, res) => {
   const donation: any = dbStore.donations.get(req.params.id);
   if (!donation) return res.status(404).json({ error: 'Donation not found' });
 
@@ -839,9 +840,10 @@ app.patch('/api/admin/donations/:id/status', authenticate, requireRole('ADMIN'),
   dbStore.donations.set(donation.id, donation);
 
   if (campaign) {
-    saveCampaignToNeon(campaign).then(() => saveDonationToNeon(donation));
+    await saveCampaignToNeon(campaign);
+    await saveDonationToNeon(donation);
   } else {
-    saveDonationToNeon(donation);
+    await saveDonationToNeon(donation);
   }
 
   const notifId = 'notif-don-' + Date.now();
@@ -860,7 +862,7 @@ app.patch('/api/admin/donations/:id/status', authenticate, requireRole('ADMIN'),
   };
   dbStore.notifications.set(notifId, notification);
 
-  logAudit(req, 'UPDATE_DONATION_STATUS', 'donation', donation.id, `Donation ${donation.receiptNumber} set to ${status}`);
+  await logAudit(req, 'UPDATE_DONATION_STATUS', 'donation', donation.id, `Donation ${donation.receiptNumber} set to ${status}`);
 
   res.json(donation);
 });
@@ -868,7 +870,7 @@ app.patch('/api/admin/donations/:id/status', authenticate, requireRole('ADMIN'),
 // ============================================================
 // Blood Donors API
 // ============================================================
-app.get('/api/blood-donors', (req, res) => {
+app.get('/api/blood-donors', async (req, res) => {
   const { bloodGroup, division, district, upazila, availableOnly } = req.query;
   let list = Array.from(dbStore.bloodDonors.values());
 
@@ -897,7 +899,7 @@ app.get('/api/blood-donors', (req, res) => {
   res.json(safeDonors);
 });
 
-app.post('/api/blood-donors', (req, res) => {
+app.post('/api/blood-donors', async (req, res) => {
   const {
     fullName,
     bloodGroup,
@@ -941,32 +943,32 @@ app.post('/api/blood-donors', (req, res) => {
   };
 
   dbStore.bloodDonors.set(id, donor);
-  saveBloodDonorToNeon(donor);
+  await saveBloodDonorToNeon(donor);
   res.status(201).json(donor);
 });
 
-app.patch('/api/blood-donors/:id', (req, res) => {
+app.patch('/api/blood-donors/:id', async (req, res) => {
   const donor = dbStore.bloodDonors.get(req.params.id);
   if (!donor) return res.status(404).json({ error: 'Donor not found' });
 
   const updated = { ...donor, ...req.body };
   dbStore.bloodDonors.set(donor.id, updated);
-  saveBloodDonorToNeon(updated);
+  await saveBloodDonorToNeon(updated);
   res.json(updated);
 });
 
-app.delete('/api/blood-donors/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.delete('/api/blood-donors/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const donor = dbStore.bloodDonors.get(req.params.id);
   if (!donor) return res.status(404).json({ error: 'Donor not found' });
   dbStore.bloodDonors.delete(req.params.id);
-  neon('Blood Donor Delete', 'DELETE FROM blood_donors WHERE id=$1', [req.params.id]);
+  await neon('Blood Donor Delete', 'DELETE FROM blood_donors WHERE id=$1', [req.params.id]);
   res.json({ success: true, message: 'Blood donor deleted' });
 });
 
 // ============================================================
 // Emergency Blood Requests API
 // ============================================================
-app.get('/api/blood-requests', (req, res) => {
+app.get('/api/blood-requests', async (req, res) => {
   const { bloodGroup, district, emergencyLevel, status } = req.query;
   let list = Array.from(dbStore.bloodRequests.values());
 
@@ -986,7 +988,7 @@ app.get('/api/blood-requests', (req, res) => {
   res.json(list.reverse());
 });
 
-app.post('/api/blood-requests', (req, res) => {
+app.post('/api/blood-requests', async (req, res) => {
   const {
     patientName,
     bloodGroup,
@@ -1040,7 +1042,7 @@ app.post('/api/blood-requests', (req, res) => {
   newRequest.matchedDonorsCount = matches.length;
 
   dbStore.bloodRequests.set(id, newRequest);
-  saveBloodRequestToNeon(newRequest);
+  await saveBloodRequestToNeon(newRequest);
 
   // Send system notification
   const notifId = 'notif-req-' + Date.now();
@@ -1057,7 +1059,7 @@ app.post('/api/blood-requests', (req, res) => {
   res.status(201).json({ request: newRequest, matchedDonors: matches.slice(0, 5) });
 });
 
-app.get('/api/blood-requests/:id/matches', (req, res) => {
+app.get('/api/blood-requests/:id/matches', async (req, res) => {
   const request = dbStore.bloodRequests.get(req.params.id);
   if (!request) return res.status(404).json({ error: 'Blood request not found' });
 
@@ -1066,18 +1068,18 @@ app.get('/api/blood-requests/:id/matches', (req, res) => {
   res.json(matches);
 });
 
-app.patch('/api/blood-requests/:id/status', (req, res) => {
+app.patch('/api/blood-requests/:id/status', async (req, res) => {
   const request = dbStore.bloodRequests.get(req.params.id);
   if (!request) return res.status(404).json({ error: 'Blood request not found' });
 
   const { status } = req.body;
   request.status = status;
   dbStore.bloodRequests.set(request.id, request);
-  neon('Blood Request Status', 'UPDATE blood_requests SET status=$1 WHERE id=$2', [status, request.id]);
+  await neon('Blood Request Status', 'UPDATE blood_requests SET status=$1 WHERE id=$2', [status, request.id]);
   res.json(request);
 });
 
-app.put('/api/blood-requests/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.put('/api/blood-requests/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const request = dbStore.bloodRequests.get(req.params.id);
   if (!request) return res.status(404).json({ error: 'Blood request not found' });
 
@@ -1093,27 +1095,27 @@ app.put('/api/blood-requests/:id', authenticate, requireRole('ADMIN'), (req, res
   if (status) request.status = status;
 
   dbStore.bloodRequests.set(request.id, request);
-  saveBloodRequestToNeon(request);
+  await saveBloodRequestToNeon(request);
   res.json(request);
 });
 
-app.delete('/api/blood-requests/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.delete('/api/blood-requests/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const request = dbStore.bloodRequests.get(req.params.id);
   if (!request) return res.status(404).json({ error: 'Blood request not found' });
 
   dbStore.bloodRequests.delete(req.params.id);
-  neon('Blood Request Delete', 'DELETE FROM blood_requests WHERE id=$1', [req.params.id]);
+  await neon('Blood Request Delete', 'DELETE FROM blood_requests WHERE id=$1', [req.params.id]);
   res.json({ success: true, message: 'Blood request deleted successfully' });
 });
 
 // ============================================================
 // Volunteers API
 // ============================================================
-app.get('/api/volunteers', (req, res) => {
+app.get('/api/volunteers', async (req, res) => {
   res.json(Array.from(dbStore.volunteers.values()));
 });
 
-app.post('/api/volunteers', (req, res) => {
+app.post('/api/volunteers', async (req, res) => {
   const { fullName, email, phone, division, district, upazila, skills, availability, motivation, preferredActivities, userId } = req.body;
   if (!fullName || !email || !phone || !district) {
     return res.status(400).json({ error: 'Name, email, phone and district are required' });
@@ -1139,35 +1141,35 @@ app.post('/api/volunteers', (req, res) => {
   };
 
   dbStore.volunteers.set(id, vol);
-  saveVolunteerToNeon(vol);
+  await saveVolunteerToNeon(vol);
   res.status(201).json(vol);
 });
 
-app.patch('/api/volunteers/:id/status', authenticate, requireRole('ADMIN'), (req, res) => {
+app.patch('/api/volunteers/:id/status', authenticate, requireRole('ADMIN'), async (req, res) => {
   const vol = dbStore.volunteers.get(req.params.id);
   if (!vol) return res.status(404).json({ error: 'Volunteer not found' });
   vol.status = req.body.status;
   dbStore.volunteers.set(vol.id, vol);
-  saveVolunteerToNeon(vol);
+  await saveVolunteerToNeon(vol);
   res.json(vol);
 });
 
-app.delete('/api/volunteers/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.delete('/api/volunteers/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const vol = dbStore.volunteers.get(req.params.id);
   if (!vol) return res.status(404).json({ error: 'Volunteer not found' });
   dbStore.volunteers.delete(req.params.id);
-  neon('Volunteer Delete', 'DELETE FROM volunteers WHERE id=$1', [req.params.id]);
+  await neon('Volunteer Delete', 'DELETE FROM volunteers WHERE id=$1', [req.params.id]);
   res.json({ success: true, message: 'Volunteer deleted' });
 });
 
 // ============================================================
 // Beneficiaries, Blog, Gallery, Contact API
 // ============================================================
-app.get('/api/beneficiaries', (req, res) => {
+app.get('/api/beneficiaries', async (req, res) => {
   res.json(Array.from(dbStore.beneficiaries.values()));
 });
 
-app.post('/api/beneficiaries', authenticate, requireRole('ADMIN'), (req, res) => {
+app.post('/api/beneficiaries', authenticate, requireRole('ADMIN'), async (req, res) => {
   const { name, photoUrl, imageUrl, location, category, story, supportRequired, grantAmount, supportReceived } = req.body;
   if (!name || !story) {
     return res.status(400).json({ error: 'Name and story are required' });
@@ -1186,32 +1188,32 @@ app.post('/api/beneficiaries', authenticate, requireRole('ADMIN'), (req, res) =>
     createdAt: new Date().toISOString()
   };
   dbStore.beneficiaries.set(id, beneficiary);
-  saveBeneficiaryToNeon(beneficiary);
+  await saveBeneficiaryToNeon(beneficiary);
   res.status(201).json(beneficiary);
 });
 
-app.put('/api/beneficiaries/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.put('/api/beneficiaries/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const ben = dbStore.beneficiaries.get(req.params.id);
   if (!ben) return res.status(404).json({ error: 'Beneficiary not found' });
   const updated = { ...ben, ...req.body };
   dbStore.beneficiaries.set(ben.id, updated);
-  saveBeneficiaryToNeon(updated);
+  await saveBeneficiaryToNeon(updated);
   res.json(updated);
 });
 
-app.delete('/api/beneficiaries/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.delete('/api/beneficiaries/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const ben = dbStore.beneficiaries.get(req.params.id);
   if (!ben) return res.status(404).json({ error: 'Beneficiary not found' });
   dbStore.beneficiaries.delete(req.params.id);
-  neon('Beneficiary Delete', 'DELETE FROM beneficiaries WHERE id=$1', [req.params.id]);
+  await neon('Beneficiary Delete', 'DELETE FROM beneficiaries WHERE id=$1', [req.params.id]);
   res.json({ success: true, message: 'Beneficiary deleted' });
 });
 
-app.get('/api/blog', (req, res) => {
+app.get('/api/blog', async (req, res) => {
   res.json(Array.from(dbStore.blogPosts.values()));
 });
 
-app.post('/api/blog', authenticate, requireRole('ADMIN'), (req, res) => {
+app.post('/api/blog', authenticate, requireRole('ADMIN'), async (req, res) => {
   const { title, excerpt, summary, content, author, readTimeMinutes, coverImage, category, tags } = req.body;
   if (!title || !content) return res.status(400).json({ error: 'Title and content are required' });
   const id = crypto.randomUUID();
@@ -1231,32 +1233,32 @@ app.post('/api/blog', authenticate, requireRole('ADMIN'), (req, res) => {
     readTimeMinutes: Number(readTimeMinutes || 4)
   };
   dbStore.blogPosts.set(id, post);
-  saveBlogToNeon(post);
+  await saveBlogToNeon(post);
   res.status(201).json(post);
 });
 
-app.put('/api/blog/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.put('/api/blog/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const post = dbStore.blogPosts.get(req.params.id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
   const updated = { ...post, ...req.body };
   dbStore.blogPosts.set(post.id, updated);
-  saveBlogToNeon(updated);
+  await saveBlogToNeon(updated);
   res.json(updated);
 });
 
-app.delete('/api/blog/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.delete('/api/blog/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const post = dbStore.blogPosts.get(req.params.id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
   dbStore.blogPosts.delete(req.params.id);
-  neon('Blog Delete', 'DELETE FROM blog_posts WHERE id=$1', [req.params.id]);
+  await neon('Blog Delete', 'DELETE FROM blog_posts WHERE id=$1', [req.params.id]);
   res.json({ success: true, message: 'Blog post deleted' });
 });
 
-app.get('/api/gallery', (req, res) => {
+app.get('/api/gallery', async (req, res) => {
   res.json(Array.from(dbStore.galleryItems.values()));
 });
 
-app.post('/api/gallery', authenticate, requireRole('ADMIN'), (req, res) => {
+app.post('/api/gallery', authenticate, requireRole('ADMIN'), async (req, res) => {
   const { title, category, imageUrl, location, description } = req.body;
   if (!title || !imageUrl) return res.status(400).json({ error: 'Title and image URL are required' });
   const id = crypto.randomUUID();
@@ -1270,19 +1272,19 @@ app.post('/api/gallery', authenticate, requireRole('ADMIN'), (req, res) => {
     description: description || ''
   };
   dbStore.galleryItems.set(id, item);
-  saveGalleryToNeon(item);
+  await saveGalleryToNeon(item);
   res.status(201).json(item);
 });
 
-app.delete('/api/gallery/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.delete('/api/gallery/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const item = dbStore.galleryItems.get(req.params.id);
   if (!item) return res.status(404).json({ error: 'Gallery item not found' });
   dbStore.galleryItems.delete(req.params.id);
-  neon('Gallery Delete', 'DELETE FROM gallery_items WHERE id=$1', [req.params.id]);
+  await neon('Gallery Delete', 'DELETE FROM gallery_items WHERE id=$1', [req.params.id]);
   res.json({ success: true, message: 'Gallery item deleted' });
 });
 
-app.post('/api/contact', (req, res) => {
+app.post('/api/contact', async (req, res) => {
   const { name, email, phone, subject, message } = req.body;
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'Name, email, and message are required' });
@@ -1302,27 +1304,27 @@ app.post('/api/contact', (req, res) => {
   };
 
   dbStore.contactMessages.set(id, item);
-  saveContactToNeon(item);
+  await saveContactToNeon(item);
   res.status(201).json({ success: true, message: 'Message received. We will respond promptly.' });
 });
 
-app.get('/api/contact', authenticate, requireRole('ADMIN'), (req, res) => {
+app.get('/api/contact', authenticate, requireRole('ADMIN'), async (req, res) => {
   res.json(Array.from(dbStore.contactMessages.values()).reverse());
 });
 
 // ============================================================
 // Chat API
 // ============================================================
-app.get('/api/chat/conversations', (req, res) => {
+app.get('/api/chat/conversations', async (req, res) => {
   res.json(Array.from(dbStore.conversations.values()));
 });
 
-app.get('/api/chat/messages/:convId', (req, res) => {
+app.get('/api/chat/messages/:convId', async (req, res) => {
   const list = Array.from(dbStore.messages.values()).filter(m => m.conversationId === req.params.convId);
   res.json(list);
 });
 
-app.post('/api/chat/messages', (req, res) => {
+app.post('/api/chat/messages', async (req, res) => {
   const { conversationId, senderId, senderName, senderRole, text } = req.body;
   if (!conversationId || !text) {
     return res.status(400).json({ error: 'Conversation and text are required' });
@@ -1356,11 +1358,11 @@ app.post('/api/chat/messages', (req, res) => {
 // ============================================================
 // Notifications API
 // ============================================================
-app.get('/api/notifications', (req, res) => {
+app.get('/api/notifications', async (req, res) => {
   res.json(Array.from(dbStore.notifications.values()).reverse());
 });
 
-app.patch('/api/notifications/read-all', (req, res) => {
+app.patch('/api/notifications/read-all', async (req, res) => {
   for (const notif of dbStore.notifications.values()) {
     notif.isRead = true;
     dbStore.notifications.set(notif.id, notif);
@@ -1371,7 +1373,7 @@ app.patch('/api/notifications/read-all', (req, res) => {
 // ============================================================
 // Admin Metrics & Reports API
 // ============================================================
-app.get('/api/admin/metrics', authenticate, requireRole('ADMIN'), (req, res) => {
+app.get('/api/admin/metrics', authenticate, requireRole('ADMIN'), async (req, res) => {
   const totalUsers = dbStore.users.size;
   const totalBloodDonors = dbStore.bloodDonors.size;
   const totalVolunteers = dbStore.volunteers.size;
@@ -1446,7 +1448,7 @@ app.get('/api/admin/users', authenticate, requireRole('ADMIN'), async (req, res)
   res.json(usersList);
 });
 
-app.patch('/api/admin/users/:id/role', authenticate, requireRole('ADMIN'), (req, res) => {
+app.patch('/api/admin/users/:id/role', authenticate, requireRole('ADMIN'), async (req, res) => {
   const user = dbStore.users.get(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -1464,14 +1466,14 @@ app.patch('/api/admin/users/:id/role', authenticate, requireRole('ADMIN'), (req,
   user.role = role;
   user.updatedAt = new Date().toISOString();
   dbStore.users.set(user.id, user);
-  neon('User Role', 'UPDATE users SET role=$1 WHERE id=$2', [role, user.id]);
-  logAudit(req, 'CHANGE_USER_ROLE', 'user', user.id, `Set ${user.email} role to ${role}`);
+  await neon('User Role', 'UPDATE users SET role=$1 WHERE id=$2', [role, user.id]);
+  await logAudit(req, 'CHANGE_USER_ROLE', 'user', user.id, `Set ${user.email} role to ${role}`);
 
   const { passwordHash: _, ...safe } = user;
   res.json(safe);
 });
 
-app.patch('/api/admin/users/:id/toggle-status', authenticate, requireRole('ADMIN'), (req, res) => {
+app.patch('/api/admin/users/:id/toggle-status', authenticate, requireRole('ADMIN'), async (req, res) => {
   const user = dbStore.users.get(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -1482,14 +1484,14 @@ app.patch('/api/admin/users/:id/toggle-status', authenticate, requireRole('ADMIN
 
   user.isActive = !user.isActive;
   dbStore.users.set(user.id, user);
-  neon('User Status', 'UPDATE users SET is_active=$1 WHERE id=$2', [user.isActive, user.id]);
-  logAudit(req, 'TOGGLE_USER_STATUS', 'user', user.id, `${user.email} is now ${user.isActive ? 'active' : 'suspended'}`);
+  await neon('User Status', 'UPDATE users SET is_active=$1 WHERE id=$2', [user.isActive, user.id]);
+  await logAudit(req, 'TOGGLE_USER_STATUS', 'user', user.id, `${user.email} is now ${user.isActive ? 'active' : 'suspended'}`);
 
   const { passwordHash: _, ...safe } = user;
   res.json(safe);
 });
 
-app.put('/api/admin/users/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.put('/api/admin/users/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const user = dbStore.users.get(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -1506,7 +1508,7 @@ app.put('/api/admin/users/:id', authenticate, requireRole('ADMIN'), (req, res) =
   user.updatedAt = new Date().toISOString();
 
   dbStore.users.set(user.id, user);
-  neon(
+  await neon(
     'User Update',
     `UPDATE users SET full_name=$1, phone=$2, role=$3, division=$4, district=$5, upazila=$6, updated_at=NOW() WHERE id=$7`,
     [user.fullName, user.phone, user.role, user.division, user.district, user.upazila, user.id]
@@ -1515,7 +1517,7 @@ app.put('/api/admin/users/:id', authenticate, requireRole('ADMIN'), (req, res) =
   res.json(safe);
 });
 
-app.delete('/api/admin/users/:id', authenticate, requireRole('ADMIN'), (req, res) => {
+app.delete('/api/admin/users/:id', authenticate, requireRole('ADMIN'), async (req, res) => {
   const user = dbStore.users.get(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -1526,8 +1528,8 @@ app.delete('/api/admin/users/:id', authenticate, requireRole('ADMIN'), (req, res
   }
 
   dbStore.users.delete(user.id);
-  neon('User Delete', 'DELETE FROM users WHERE id=$1', [user.id]);
-  logAudit(req, 'DELETE_USER', 'user', user.id, `Deleted user ${user.email}`);
+  await neon('User Delete', 'DELETE FROM users WHERE id=$1', [user.id]);
+  await logAudit(req, 'DELETE_USER', 'user', user.id, `Deleted user ${user.email}`);
   res.json({ success: true, message: 'User deleted successfully' });
 });
 
@@ -1545,7 +1547,7 @@ app.post('/api/admin/database/connect', authenticate, requireRole('ADMIN'), asyn
       if (!isUuid(u.id) || !u.passwordHash) continue;
       await saveUserToNeon(u);
     }
-    logAudit(req, 'CONNECT_DATABASE', 'database', undefined, 'Connected Neon PostgreSQL');
+    await logAudit(req, 'CONNECT_DATABASE', 'database', undefined, 'Connected Neon PostgreSQL');
   }
 
   res.json({
@@ -1554,7 +1556,7 @@ app.post('/api/admin/database/connect', authenticate, requireRole('ADMIN'), asyn
   });
 });
 
-app.get('/api/admin/database/sql-script', authenticate, requireRole('ADMIN'), (req, res) => {
+app.get('/api/admin/database/sql-script', authenticate, requireRole('ADMIN'), async (req, res) => {
   res.json({
     sql: postgresService.getNeonSqlScript()
   });
@@ -1596,7 +1598,7 @@ app.post('/api/admin/database/sync-all', authenticate, requireRole('ADMIN'), asy
     for (const d of dbStore.donations.values()) await track(saveDonationToNeon(d));
 
     const counts = await postgresService.getTableCounts();
-    logAudit(req, 'SYNC_ALL', 'database', undefined, `Synced memory to Neon (${failed} failed)`);
+    await logAudit(req, 'SYNC_ALL', 'database', undefined, `Synced memory to Neon (${failed} failed)`);
 
     res.json({
       success: true,
@@ -1611,16 +1613,16 @@ app.post('/api/admin/database/sync-all', authenticate, requireRole('ADMIN'), asy
   }
 });
 
-app.get('/api/admin/audit-logs', authenticate, requireRole('ADMIN'), (req, res) => {
+app.get('/api/admin/audit-logs', authenticate, requireRole('ADMIN'), async (req, res) => {
   res.json(Array.from(dbStore.auditLogs.values()).reverse());
 });
 
-app.post('/api/admin/clear-data', authenticate, requireRole('ADMIN'), (req, res) => {
+app.post('/api/admin/clear-data', authenticate, requireRole('ADMIN'), async (req, res) => {
   dbStore.clearAllRecords();
   res.json({ success: true, message: 'All demo data cleared. Database is completely fresh.' });
 });
 
-app.post('/api/admin/seed-data', authenticate, requireRole('ADMIN'), (req, res) => {
+app.post('/api/admin/seed-data', authenticate, requireRole('ADMIN'), async (req, res) => {
   dbStore.seedSampleRecords();
   res.json({ success: true, message: 'Starter data populated.' });
 });
@@ -1909,7 +1911,7 @@ async function startServer() {
   } else {
     const distDir = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distDir));
-    app.get('*', (req, res) => {
+    app.get('*', async (req, res) => {
       res.sendFile(path.resolve(distDir, 'index.html'));
     });
   }
