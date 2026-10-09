@@ -1,325 +1,70 @@
 @import "tailwindcss";
 
 /* =========================================================
-   GLOBAL BASE / RESPONSIVE SAFETY
+   GLOBAL BASE & OVERFLOW SAFETY
    ========================================================= */
 
 @layer base {
-  html {
+  html, body {
     width: 100%;
-    max-width: 100%;
+    max-width: 100vw;
     margin: 0;
     padding: 0;
-
-    scroll-behavior: smooth;
-    overflow-x: hidden;
-
+    overflow-x: hidden !important;
     -webkit-text-size-adjust: 100%;
-  }
-
-  body {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    min-height: 100vh;
-
-    margin: 0;
-    padding: 0;
-
     background-color: #f8fafc;
     color: #1e293b;
-
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-
-    overflow-x: hidden;
-    overflow-wrap: break-word;
   }
 
   #root {
     width: 100%;
-    max-width: 100%;
-    min-width: 0;
+    max-width: 100vw;
     min-height: 100vh;
-
-    overflow-x: hidden;
+    overflow-x: hidden !important;
   }
 
-  /* Box sizing */
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     box-sizing: border-box;
   }
 
-  /* Images / media */
-  img,
-  video,
-  canvas,
-  svg {
+  img, video, svg, canvas {
     max-width: 100%;
-  }
-
-  img,
-  video {
     height: auto;
   }
-
-  img {
-    display: block;
-  }
-
-  /* Forms */
-  button,
-  input,
-  textarea,
-  select {
-    max-width: 100%;
-    font: inherit;
-  }
-
-  button {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-
-  /* Links */
-  a {
-    max-width: 100%;
-  }
-
-  /* Long text protection */
-  p,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    overflow-wrap: anywhere;
-  }
 }
 
 /* =========================================================
-   MAIN LAYOUT SAFETY
+   NO SCROLLBAR & HORIZONTAL FILTER SAFETY
    ========================================================= */
 
-main,
-section,
-article,
-header,
-footer,
-nav {
-  max-width: 100%;
-  min-width: 0;
-}
-
-/* =========================================================
-   FLEX / GRID SAFETY
-   ========================================================= */
-
-/*
-  Important:
-  Flex/Grid children can sometimes force the parent wider.
-*/
-
-.flex > *,
-.grid > * {
-  min-width: 0;
-}
-
-/* Common flex/grid containers */
-.flex,
-.grid {
-  min-width: 0;
-}
-
-/* =========================================================
-   PILL BUTTONS & FILTER LABELS PROTECTION (CRITICAL FIX)
-   বাটনগুলো কুঁচকে [Med] [Dise] হওয়া এবং 'Group:' খাড়া হওয়া রোধ করবে
-   ========================================================= */
-
-/* সমস্ত গোল ফিল্টার বাটন কখনো সংকুচিত হবে না এবং লেখা কাটবে না */
-button[class*="rounded-full"],
-button[class*="rounded-xl"],
-.shrink-0 {
-  flex-shrink: 0 !important;
-  white-space: nowrap !important;
-  min-width: max-content;
-}
-
-/* 'Group:' বা ফিল্টার টাইটেল যাতে খাড়াভাবে ভেঙে না যায় */
-.flex > span,
-.whitespace-nowrap {
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-}
-
-/* =========================================================
-   TEXT / URL OVERFLOW PROTECTION
-   ========================================================= */
-
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-span,
-a {
-  overflow-wrap: anywhere;
-}
-
-/*
-  Buttons and navigation labels should normally keep
-  their natural text behavior.
-*/
-button,
-nav button {
-  overflow-wrap: normal;
-  word-break: normal;
-}
-
-/* =========================================================
-   MEDIA SAFETY
-   ========================================================= */
-
-img,
-video,
-canvas {
-  max-width: 100%;
-  height: auto;
-}
-
-/* SVG should never create horizontal overflow */
-svg {
-  max-width: 100%;
-}
-
-/* =========================================================
-   TABLE & HORIZONTAL SCROLL SAFETY (NO UGLY SCROLLBAR)
-   ========================================================= */
-
-table {
-  max-width: 100%;
-}
-
-.table-wrapper {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* অনুভূমিক স্ক্রোলিং কন্টেইনারে ছাই রঙের দাগ লুকানো */
-.overflow-x-auto,
-div[class*="overflow-x-auto"],
-.no-scrollbar {
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE/Edge */
-}
-
-.overflow-x-auto::-webkit-scrollbar,
-div[class*="overflow-x-auto"]::-webkit-scrollbar,
-.no-scrollbar::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari, Android */
+/* অনুভূমিক ফিল্টার বাটনগুলোর নিচের দাগ লুকানো */
+.no-scrollbar::-webkit-scrollbar,
+div[class*="overflow-x-auto"]::-webkit-scrollbar {
+  display: none !important;
   height: 0 !important;
   width: 0 !important;
 }
 
+.no-scrollbar,
+div[class*="overflow-x-auto"] {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+/* শুধু যেসব বাটনে shrink-0 থাকবে সেগুলো কাটবে না */
+.shrink-0 {
+  flex-shrink: 0 !important;
+}
+
+.whitespace-nowrap {
+  white-space: nowrap !important;
+}
+
 /* =========================================================
-   FORM SAFETY
+   MODAL & CONTAINER SAFETY
    ========================================================= */
 
-input,
-textarea,
-select {
-  min-width: 0;
+main, section, article, header, footer {
   max-width: 100%;
-}
-
-/* =========================================================
-   MOBILE SAFETY
-   ========================================================= */
-
-@media (max-width: 639px) {
-  html,
-  body,
-  #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  main {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow-x: hidden;
-    padding-bottom: 5rem; /* Netlify ব্যাজ কভার হওয়া রোধ করবে */
-  }
-
-  section,
-  article,
-  header,
-  footer {
-    max-width: 100%;
-    min-width: 0;
-  }
-}
-
-/* =========================================================
-   TABLET SAFETY
-   ========================================================= */
-
-@media (min-width: 640px) and (max-width: 1023px) {
-  html,
-  body,
-  #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-}
-
-/* =========================================================
-   LAPTOP SAFETY
-   ========================================================= */
-
-@media (min-width: 1024px) and (max-width: 1535px) {
-  html,
-  body,
-  #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-}
-
-/* =========================================================
-   LARGE DESKTOP
-   ========================================================= */
-
-@media (min-width: 1536px) {
-  html,
-  body,
-  #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-}
-
-/* =========================================================
-   MOBILE TOUCH
-   ========================================================= */
-
-@media (max-width: 640px) {
-  button {
-    touch-action: manipulation;
-  }
+  min-width: 0;
 }
