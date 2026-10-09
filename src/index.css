@@ -134,6 +134,27 @@ nav {
 }
 
 /* =========================================================
+   PILL BUTTONS & FILTER LABELS PROTECTION (CRITICAL FIX)
+   বাটনগুলো কুঁচকে [Med] [Dise] হওয়া এবং 'Group:' খাড়া হওয়া রোধ করবে
+   ========================================================= */
+
+/* সমস্ত গোল ফিল্টার বাটন কখনো সংকুচিত হবে না এবং লেখা কাটবে না */
+button[class*="rounded-full"],
+button[class*="rounded-xl"],
+.shrink-0 {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  min-width: max-content;
+}
+
+/* 'Group:' বা ফিল্টার টাইটেল যাতে খাড়াভাবে ভেঙে না যায় */
+.flex > span,
+.whitespace-nowrap {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* =========================================================
    TEXT / URL OVERFLOW PROTECTION
    ========================================================= */
 
@@ -176,17 +197,13 @@ svg {
 }
 
 /* =========================================================
-   TABLE SAFETY
+   TABLE & HORIZONTAL SCROLL SAFETY (NO UGLY SCROLLBAR)
    ========================================================= */
 
 table {
   max-width: 100%;
 }
 
-/*
-  If you have a wide table, wrap it with:
-  <div className="overflow-x-auto">
-*/
 .table-wrapper {
   width: 100%;
   max-width: 100%;
@@ -195,9 +212,23 @@ table {
   -webkit-overflow-scrolling: touch;
 }
 
-.overflow-x-auto {
+/* অনুভূমিক স্ক্রোলিং কন্টেইনারে ছাই রঙের দাগ লুকানো */
+.overflow-x-auto,
+div[class*="overflow-x-auto"],
+.no-scrollbar {
   max-width: 100%;
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+.overflow-x-auto::-webkit-scrollbar,
+div[class*="overflow-x-auto"]::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Android */
+  height: 0 !important;
+  width: 0 !important;
 }
 
 /* =========================================================
@@ -210,12 +241,6 @@ select {
   min-width: 0;
   max-width: 100%;
 }
-
-/*
-  Don't force width: 100% globally.
-  Existing form layouts may intentionally use
-  auto / fixed / grid widths.
-*/
 
 /* =========================================================
    MOBILE SAFETY
@@ -235,6 +260,7 @@ select {
     max-width: 100%;
     min-width: 0;
     overflow-x: hidden;
+    padding-bottom: 5rem; /* Netlify ব্যাজ কভার হওয়া রোধ করবে */
   }
 
   section,
