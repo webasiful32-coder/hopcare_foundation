@@ -37,14 +37,28 @@ export const Navbar: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Robust Admin check (supports role 'ADMIN', 'admin', 'SUPER_ADMIN' or admin email)
-  const isAdmin = Boolean(
-    user && (
-      String(user.role ?? '').trim().toUpperCase().includes('ADMIN') ||
-      user.email?.toLowerCase().trim().startsWith('admin') ||
-      user.email?.toLowerCase().trim() === 'admin@hopecare.org'
-    )
+  // =========================================================
+  // কঠোর অ্যাডমিন চেকিং (সাধারণ কোনো ইউজার কখনোই দেখতে পাবে না)
+  // ১. প্রধান সুপার অ্যাডমিন: mdarfanahmed97@gmail.com
+  // ২. অ্যাডমিন কর্তৃক অনুমোদিত রোল: role === 'ADMIN'
+  // =========================================================
+  const SUPER_ADMIN_EMAILS = [
+    'mdarfanahmed97@gmail.com',
+    'asifulcse@gmail.com',
+    'asifulcse22@gmail.com',
+    'admin@hopecare.org'
+  ];
+
+  const isSuperAdmin = Boolean(
+    user?.email && SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase().trim())
   );
+
+  const isRoleAdmin = Boolean(
+    user && String(user.role ?? '').trim().toUpperCase() === 'ADMIN'
+  );
+
+  // সাধারণ ইউজারদের জন্য isAdmin সর্বদা false থাকবে
+  const isAdmin = Boolean(user && (isSuperAdmin || isRoleAdmin));
 
   const baseNavLinks = [
     { id: 'home', label: lang === 'bn' ? 'হোম' : 'Home' },
@@ -58,7 +72,7 @@ export const Navbar: React.FC = () => {
     { id: 'contact', label: lang === 'bn' ? 'যোগাযোগ' : 'Contact' },
   ];
 
-  // Dynamically include Admin in navLinks if user is Admin
+  // শুধুমাত্র আসল অ্যাডমিন লগইন করলেই মেনুতে 'অ্যাডমিন প্যানেল' যুক্ত হবে
   const navLinks = isAdmin
     ? [...baseNavLinks, { id: 'admin', label: lang === 'bn' ? 'অ্যাডমিন প্যানেল' : 'Admin Panel' }]
     : baseNavLinks;
@@ -105,7 +119,7 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => openBloodRequestModal()}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition whitespace-nowrap shrink-0"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <Droplet className="w-3.5 h-3.5 shrink-0" />
                 Request Blood Immediately
@@ -113,7 +127,7 @@ export const Navbar: React.FC = () => {
 
               <button
                 onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
-                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition whitespace-nowrap shrink-0"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-white bg-white/10 border border-white/25 hover:bg-white/20 transition whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <Globe className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                 <span>{lang === 'en' ? 'বাংলা' : 'English'}</span>
@@ -195,7 +209,7 @@ export const Navbar: React.FC = () => {
                     <button
                       key={link.id}
                       onClick={() => handleNavClick(link.id)}
-                      className={`relative px-2 2xl:px-3 py-2 rounded-xl text-[12px] 2xl:text-[13px] font-bold whitespace-nowrap transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 shrink-0 ${
+                      className={`relative px-2 2xl:px-3 py-2 rounded-xl text-[12px] 2xl:text-[13px] font-bold whitespace-nowrap transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 shrink-0 cursor-pointer ${
                         isActive
                           ? link.id === 'admin'
                             ? 'bg-purple-100 text-purple-800'
@@ -238,7 +252,7 @@ export const Navbar: React.FC = () => {
                       markNotificationsAsRead();
                     }
                   }}
-                  className="relative w-7.5 h-7.5 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-600 hover:text-teal-700 hover:bg-teal-50 transition"
+                  className="relative w-7.5 h-7.5 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-slate-600 hover:text-teal-700 hover:bg-teal-50 transition cursor-pointer"
                   aria-label="Notifications"
                 >
                   <Bell className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
@@ -269,7 +283,7 @@ export const Navbar: React.FC = () => {
 
                         <button
                           onClick={markNotificationsAsRead}
-                          className="text-[10px] font-bold text-teal-600 hover:underline whitespace-nowrap shrink-0"
+                          className="text-[10px] font-bold text-teal-600 hover:underline whitespace-nowrap shrink-0 cursor-pointer"
                         >
                           Mark all read
                         </button>
@@ -299,11 +313,11 @@ export const Navbar: React.FC = () => {
               </div>
 
               {/* 2. Admin Panel Button:
+                  - শুধুমাত্র isAdmin TRUE হলেই দৃশ্যমান হবে (সাধারণ ইউজারের কাছে লুকিয়ে থাকবে)
                   - LAPTOPS/TABLETS (md:flex): Full button with text and icon
                   - MOBILE (< md): Compact purple icon badge directly in the header */}
               {isAdmin && (
                 <>
-                  {/* Laptop & Tablet visible button */}
                   <button
                     onClick={() => handleNavClick('admin')}
                     className="hidden md:flex items-center gap-1.5 h-8 sm:h-10 px-2.5 sm:px-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-[11px] sm:text-xs font-extrabold shadow-md shadow-purple-600/20 transition cursor-pointer whitespace-nowrap shrink-0"
@@ -313,10 +327,9 @@ export const Navbar: React.FC = () => {
                     <span>Admin Panel</span>
                   </button>
 
-                  {/* Mobile header direct shortcut icon button */}
                   <button
                     onClick={() => handleNavClick('admin')}
-                    className="flex md:hidden items-center justify-center w-7.5 h-7.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm hover:opacity-90 transition shrink-0"
+                    className="flex md:hidden items-center justify-center w-7.5 h-7.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm hover:opacity-90 transition shrink-0 cursor-pointer"
                     title="Admin Dashboard"
                     aria-label="Admin Dashboard"
                   >
@@ -333,7 +346,7 @@ export const Navbar: React.FC = () => {
                       setIsUserMenuOpen(!isUserMenuOpen);
                       setIsNotifOpen(false);
                     }}
-                    className="flex items-center justify-center gap-1 sm:gap-2 h-7.5 sm:h-10 px-1 sm:px-2 rounded-xl border border-slate-200 bg-white hover:bg-teal-50 hover:border-teal-200 transition shrink-0"
+                    className="flex items-center justify-center gap-1 sm:gap-2 h-7.5 sm:h-10 px-1 sm:px-2 rounded-xl border border-slate-200 bg-white hover:bg-teal-50 hover:border-teal-200 transition shrink-0 cursor-pointer"
                   >
                     <div className="w-5.5 h-5.5 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 text-white font-bold text-[11px] sm:text-xs flex items-center justify-center overflow-hidden shrink-0">
                       {user.avatarUrl ? (
@@ -370,7 +383,7 @@ export const Navbar: React.FC = () => {
 
                         <button
                           onClick={() => handleNavClick('dashboard')}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-teal-50 transition min-w-0"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-teal-50 transition min-w-0 cursor-pointer"
                         >
                           <span className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
                             <LayoutDashboard className="w-4 h-4 text-teal-600" />
@@ -378,10 +391,11 @@ export const Navbar: React.FC = () => {
                           <span className="text-xs font-bold text-slate-700 truncate">User Dashboard</span>
                         </button>
 
+                        {/* শুধুমাত্র অ্যাডমিনের ড্রপডাউনেই এটি দেখা যাবে */}
                         {isAdmin && (
                           <button
                             onClick={() => handleNavClick('admin')}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left bg-purple-50 hover:bg-purple-100 transition min-w-0 mt-1"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left bg-purple-50 hover:bg-purple-100 transition min-w-0 mt-1 cursor-pointer"
                           >
                             <span className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center shrink-0 text-white">
                               <ShieldAlert className="w-4 h-4" />
@@ -396,7 +410,7 @@ export const Navbar: React.FC = () => {
                               logout();
                               setIsUserMenuOpen(false);
                             }}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-rose-600 hover:bg-rose-50 transition"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                           >
                             <LogOut className="w-4 h-4 shrink-0" />
                             <span className="text-xs font-bold">Sign Out</span>
@@ -420,7 +434,7 @@ export const Navbar: React.FC = () => {
               {/* 4. Donate Button */}
               <button
                 onClick={() => openDonateModal()}
-                className="h-7.5 sm:h-10 px-2 sm:px-4 2xl:px-5 rounded-xl text-[10px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:from-cyan-700 hover:via-teal-700 hover:to-emerald-700 shadow-sm sm:shadow-md flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap transition shrink-0"
+                className="h-7.5 sm:h-10 px-2 sm:px-4 2xl:px-5 rounded-xl text-[10px] sm:text-xs font-extrabold text-white bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:from-cyan-700 hover:via-teal-700 hover:to-emerald-700 shadow-sm sm:shadow-md flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap transition shrink-0 cursor-pointer"
               >
                 <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-white shrink-0" />
                 <span>Donate</span>
@@ -433,7 +447,7 @@ export const Navbar: React.FC = () => {
                   setIsNotifOpen(false);
                   setIsUserMenuOpen(false);
                 }}
-                className="xl:hidden w-7.5 h-7.5 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-slate-800 bg-slate-100 hover:bg-teal-50 hover:text-teal-700 border border-slate-200 transition"
+                className="xl:hidden w-7.5 h-7.5 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-xl text-slate-800 bg-slate-100 hover:bg-teal-50 hover:text-teal-700 border border-slate-200 transition cursor-pointer"
                 aria-label="Toggle Navigation"
               >
                 {isMobileMenuOpen ? (
@@ -482,7 +496,7 @@ export const Navbar: React.FC = () => {
                   <button
                     key={link.id}
                     onClick={() => handleNavClick(link.id)}
-                    className={`w-full min-w-0 flex items-center justify-between gap-2 px-3.5 py-3 sm:py-3.5 rounded-xl text-left text-xs sm:text-sm font-bold transition-all border ${
+                    className={`w-full min-w-0 flex items-center justify-between gap-2 px-3.5 py-3 sm:py-3.5 rounded-xl text-left text-xs sm:text-sm font-bold transition-all border cursor-pointer ${
                       isActive
                         ? link.id === 'admin'
                           ? 'bg-purple-100 text-purple-800 border-purple-300'
@@ -509,7 +523,7 @@ export const Navbar: React.FC = () => {
                     openAuthModal('login');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs sm:text-sm font-extrabold hover:bg-slate-50 transition flex items-center justify-center gap-2"
+                  className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs sm:text-sm font-extrabold hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <UserIcon className="w-4 h-4 shrink-0" />
                   <span className="truncate">Sign In / Register</span>
@@ -520,19 +534,20 @@ export const Navbar: React.FC = () => {
                     handleNavClick('dashboard');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 text-white text-xs sm:text-sm font-extrabold shadow-sm truncate"
+                  className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 text-white text-xs sm:text-sm font-extrabold shadow-sm truncate cursor-pointer"
                 >
                   Go to User Dashboard
                 </button>
               )}
 
+              {/* শুধুমাত্র অ্যাডমিন হলেই মোবাইল ড্রয়ারে বাটনটি দেখা যাবে */}
               {isAdmin && (
                 <button
                   onClick={() => {
                     handleNavClick('admin');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs sm:text-sm font-extrabold shadow-md flex items-center justify-center gap-2"
+                  className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs sm:text-sm font-extrabold shadow-md flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ShieldAlert className="w-4 h-4 shrink-0" />
                   <span className="truncate">Admin Dashboard</span>
@@ -544,7 +559,7 @@ export const Navbar: React.FC = () => {
                   openBloodRequestModal();
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-sm"
+                className="w-full min-w-0 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
                 <Droplet className="w-4 h-4 shrink-0" />
                 <span>Request Blood</span>
@@ -554,7 +569,7 @@ export const Navbar: React.FC = () => {
             {/* Language Switch */}
             <button
               onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
-              className="w-full min-w-0 mt-2 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold flex items-center justify-center gap-2"
+              className="w-full min-w-0 mt-2 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 cursor-pointer"
             >
               <Globe className="w-4 h-4 shrink-0" />
               <span>{lang === 'en' ? 'বাংলায় দেখুন' : 'View in English'}</span>
@@ -567,7 +582,7 @@ export const Navbar: React.FC = () => {
                   logout();
                   setIsMobileMenuOpen(false);
                 }}
-                className="w-full min-w-0 mt-2 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs sm:text-sm font-bold flex items-center justify-center gap-2"
+                className="w-full min-w-0 mt-2 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 cursor-pointer"
               >
                 <LogOut className="w-4 h-4 shrink-0" />
                 <span>Sign Out</span>

@@ -33,9 +33,10 @@ app.use((req, res, next) => {
 });
 
 // ============================================================
-// ২. অ্যাডমিন তালিকা (সব ডিভাইসে অ্যাডমিন পাওয়ার জন্য)
+// ২. প্রাথমিক সুপার অ্যাডমিন তালিকা (mdarfanahmed97@gmail.com প্রধান)
 // ============================================================
 const DEFAULT_ADMIN_EMAILS = [
+  'mdarfanahmed97@gmail.com',
   'asifulcse@gmail.com',
   'asifulcse22@gmail.com',
   'admin@hopecare.org'
@@ -50,7 +51,7 @@ const ADMIN_EMAILS = Array.from(new Set([...DEFAULT_ADMIN_EMAILS, ...ENV_ADMINS]
 
 const isUserAdminEmail = (email: string): boolean => {
   const e = String(email || '').toLowerCase().trim();
-  return ADMIN_EMAILS.includes(e) || e.startsWith('admin@');
+  return ADMIN_EMAILS.includes(e);
 };
 
 const AUTO_APPROVE_DONATIONS = process.env.AUTO_APPROVE_DONATIONS === 'true';
@@ -91,9 +92,11 @@ const toIso = (v: any): string => {
   return String(v);
 };
 
+// ইউজার অবজেক্ট তৈরি: যদি ডাটাবেজে রোল ADMIN থাকে অথবা তালিকায় থাকে, তবে ADMIN
 const rowToUser = (row: any) => {
   const emailLower = String(row.email || '').toLowerCase().trim();
-  const assignedRole = (isUserAdminEmail(emailLower) ? 'ADMIN' : (row.role || 'DONOR')) as UserRole;
+  const isDbAdmin = String(row.role || '').toUpperCase().trim() === 'ADMIN';
+  const assignedRole: UserRole = (isUserAdminEmail(emailLower) || isDbAdmin) ? 'ADMIN' : (row.role || 'DONOR');
 
   return {
     id: row.id,
@@ -193,7 +196,7 @@ const requireRole = (...roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const user = (req as any).user;
     if (!user || !roles.includes(user.role)) {
-      res.status(403).json({ error: 'Access denied: insufficient permissions' });
+      res.status(403).json({ error: 'Access denied: You do not have permission to access Admin resources' });
       return;
     }
     next();
@@ -225,6 +228,7 @@ const handleRegister = async (req: Request, res: Response) => {
       return res.status(409).json({ error: 'এই ইমেইল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা হয়েছে।' });
     }
 
+    // রেজিস্ট্রেশনের সময় সাধারণ ইউজাররা DONOR হবে, শুধু অনুমোদিত ইমেইল হলে ADMIN
     const assignedRole: UserRole = isUserAdminEmail(emailLower) ? 'ADMIN' : 'DONOR';
     const userId = crypto.randomUUID();
     const passwordHash = authService.hashPassword(cleanPassword);
@@ -268,7 +272,7 @@ const handleLogin = async (req: Request, res: Response) => {
     const cleanPassword = String(password).trim();
     let matchedUser: any = null;
 
-    // ১. Neon DB সরাসরি রিড করা
+    // ১. Neon DB থেকে রিড করা
     const dbRes = await neon(
       'Login Search',
       'SELECT * FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM($1))',
@@ -294,10 +298,10 @@ const handleLogin = async (req: Request, res: Response) => {
     }
 
     if (matchedUser.isActive === false) {
-      return res.status(403).json({ error: 'আপনার অ্যাকাউন্টটি স্থগিত করা হয়েছে।' });
+      return res.status(403).json({ error: 'আপনার অ্যাকাউন্টটি স্থগিত (Block/Suspended) করা হয়েছে।' });
     }
 
-    // ৩. পাসওয়ার্ড ভেরিফিকেশন (authService + SHA-256 + ডাইরেক্ট চেক)
+    // ৩. পাসওয়ার্ড ভেরিফিকেশন
     const sha256Hex = crypto.createHash('sha256').update(cleanPassword).digest('hex');
     let isValid = false;
 
@@ -321,7 +325,7 @@ const handleLogin = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।' });
     }
 
-    // অ্যাডমিন রোল নিশ্চিত করা
+    // mdarfanahmed97@gmail.com হলে রোলে ADMIN নিশ্চিত করা
     if (isUserAdminEmail(emailLower) && matchedUser.role !== 'ADMIN') {
       matchedUser.role = 'ADMIN';
       dbStore.users.set(matchedUser.id, matchedUser);
@@ -338,7 +342,6 @@ const handleLogin = async (req: Request, res: Response) => {
   }
 };
 
-// Vercel Compatibility: /api/... এবং /... দুটি রুটেই কাজ করবে
 app.post(['/api/auth/register', '/auth/register'], handleRegister);
 app.post(['/api/auth/login', '/auth/login'], handleLogin);
 
@@ -348,9 +351,174 @@ app.get(['/api/auth/me', '/auth/me'], authenticate, async (req, res) => {
   res.json({ user: safeUser });
 });
 
-// অন্যান্য সমস্ত এপিআই রুট অপরিবর্তিত রাখা হয়েছে...
-// (Donations, Campaigns, Blood Requests, Donors, Volunteers ইত্যাদি)
+// ============================================================
+// ৬. সম্পূর্ণ ADMIN USER MANAGEMENT CRUD (অন্য কাউকে ADMIN বানানো সহ)
+// ============================================================
 
+// ১. সমস্ত ইউজারের তালিকা দেখা
+app.get(['/api/admin/users', '/admin/users'], authenticate, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const dbRes = await neon(
+      'Admin Users Query',
+      'SELECT id, full_name as "fullName", email, phone, role, division, district, upazila, is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt" FROM users ORDER BY created_at DESC'
+    );
+    if (dbRes && dbRes.rows) {
+      return res.json(dbRes.rows);
+    }
+  } catch (err: any) {
+    console.warn('[Postgres Users Query Error]:', err.message);
+  }
+
+  const usersList = Array.from(dbStore.users.values()).map(u => {
+    const { passwordHash: _, ...safe } = u;
+    return safe;
+  });
+  res.json(usersList);
+});
+
+// ২. যে কাউকে ADMIN বানানো বা রোল পরিবর্তন করা (PROMOTE TO ADMIN)
+app.patch(['/api/admin/users/:id/role', '/admin/users/:id/role'], authenticate, requireRole('ADMIN'), async (req, res) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  const validRoles: UserRole[] = ['ADMIN', 'DONOR', 'VOLUNTEER'];
+  if (!role || !validRoles.includes(role)) {
+    return res.status(400).json({ error: 'সঠিক রোল নির্বাচন করুন (ADMIN, DONOR, VOLUNTEER)' });
+  }
+
+  try {
+    // Neon ডাটাবেজে রোল আপডেট করা
+    await neon('Update User Role', 'UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2', [role, id]);
+
+    // মেমরিতে আপডেট
+    const u = dbStore.users.get(id);
+    if (u) {
+      u.role = role;
+      dbStore.users.set(id, u);
+      // যদি অ্যাডমিন বানানো হয়, তবে অ্যাডমিন তালিকায় যুক্ত করা
+      if (role === 'ADMIN' && u.email && !ADMIN_EMAILS.includes(u.email.toLowerCase().trim())) {
+        ADMIN_EMAILS.push(u.email.toLowerCase().trim());
+      }
+    }
+
+    res.json({ success: true, message: `ব্যবহারকারীকে সফলভাবে ${role} রোল প্রদান করা হয়েছে` });
+  } catch (err: any) {
+    res.status(500).json({ error: 'রোল পরিবর্তন ব্যর্থ হয়েছে' });
+  }
+});
+
+// ৩. ইউজার ব্লক / আনব্লক করা (Block / Unblock User)
+app.patch(['/api/admin/users/:id/status', '/admin/users/:id/status'], authenticate, requireRole('ADMIN'), async (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+
+  try {
+    await neon('Update User Status', 'UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2', [Boolean(isActive), id]);
+    
+    const u = dbStore.users.get(id);
+    if (u) {
+      u.isActive = Boolean(isActive);
+      dbStore.users.set(id, u);
+    }
+
+    res.json({ success: true, message: `ইউজার স্ট্যাটাস পরিবর্তন হয়েছে` });
+  } catch (err: any) {
+    res.status(500).json({ error: 'ইউজার স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে' });
+  }
+});
+
+// ৪. ইউজার ডিলিট করা (Delete User)
+app.delete(['/api/admin/users/:id', '/admin/users/:id'], authenticate, requireRole('ADMIN'), async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await neon('Delete User', 'DELETE FROM users WHERE id = $1', [id]);
+    dbStore.users.delete(id);
+    res.json({ success: true, message: 'ইউজার ডাটাবেজ থেকে মুছে ফেলা হয়েছে' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'ইউজার ডিলিট করা সম্ভব হয়নি' });
+  }
+});
+
+// ৫. অ্যাডমিন ড্যাশবোর্ড পরিসংখ্যান
+app.get(['/api/admin/metrics', '/admin/metrics'], authenticate, requireRole('ADMIN'), async (req, res) => {
+  const totalUsers = dbStore.users.size;
+  const totalBloodDonors = dbStore.bloodDonors.size;
+  const totalVolunteers = dbStore.volunteers.size;
+  const totalCampaigns = dbStore.campaigns.size;
+
+  let totalDonationsAmount = 0;
+  let pendingDonations = 0;
+  for (const d of dbStore.donations.values()) {
+    if (d.paymentStatus === 'Successful') {
+      totalDonationsAmount += d.amount;
+    } else if (d.paymentStatus === 'Pending') {
+      pendingDonations += 1;
+    }
+  }
+
+  res.json({
+    totalUsers,
+    totalBloodDonors,
+    totalVolunteers,
+    totalCampaigns,
+    totalDonationsCount: dbStore.donations.size,
+    totalDonationsAmount,
+    pendingDonations
+  });
+});
+
+// ============================================================
+// ৭. CAMPAIGNS, DONATIONS & BLOOD APIS
+// ============================================================
+app.get(['/api/campaigns', '/campaigns'], async (req, res) => {
+  res.json(Array.from(dbStore.campaigns.values()));
+});
+
+app.post(['/api/donations', '/donations'], async (req, res) => {
+  try {
+    const { campaignId, donorName, donorEmail, donorPhone, amount, isAnonymous, message, paymentGateway, userId, transactionId } = req.body;
+    const donationId = crypto.randomUUID();
+    const receiptNumber = 'REC-2026-' + Math.floor(10000 + Math.random() * 90000);
+
+    const donation: any = {
+      id: donationId,
+      campaignId,
+      donorName: isAnonymous ? 'Anonymous Donor' : (donorName || 'Kind Supporter'),
+      donorEmail: donorEmail || 'donor@hopecare.org',
+      donorPhone: donorPhone || '',
+      amount: Number(amount),
+      isAnonymous: Boolean(isAnonymous),
+      message: message || '',
+      paymentGateway: paymentGateway || 'bKash',
+      paymentStatus: 'Pending',
+      transactionId: transactionId || '',
+      receiptNumber,
+      createdAt: new Date().toISOString()
+    };
+
+    dbStore.donations.set(donationId, donation);
+    res.status(201).json({ success: true, donation });
+  } catch {
+    res.status(500).json({ error: 'Donation failed' });
+  }
+});
+
+app.get(['/api/blood-donors', '/blood-donors'], async (req, res) => {
+  res.json(Array.from(dbStore.bloodDonors.values()));
+});
+
+app.get(['/api/blood-requests', '/blood-requests'], async (req, res) => {
+  res.json(Array.from(dbStore.bloodRequests.values()).reverse());
+});
+
+app.get(['/api/notifications', '/notifications'], async (req, res) => {
+  res.json(Array.from(dbStore.notifications.values()).reverse());
+});
+
+// ============================================================
+// ৮. ডাটাবেজ সিঙ্ক ও সার্ভার স্টার্ট
+// ============================================================
 async function syncFromNeon() {
   const usersRes = await neon('Load users', 'SELECT * FROM users');
   if (usersRes && usersRes.rows && usersRes.rows.length > 0) {
@@ -420,7 +588,6 @@ async function startServer() {
 }
 
 export default app;
-
 
 if (!process.env.VERCEL) {
   startServer();
