@@ -36,9 +36,107 @@ import {
   Check,
   Image as ImageIcon,
   BookOpen,
-  UserCheck
+  UserCheck,
+  UploadCloud
 } from 'lucide-react';
 import { BLOOD_GROUPS } from '../../data/bangladeshData';
+
+// ==========================================
+// Image upload helpers (device -> resized base64 data URL)
+// ==========================================
+const resizeImageToDataUrl = (file: File, maxWidth = 1200, quality = 0.8): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image'));
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+
+interface ImageUploadFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onError: (message: string) => void;
+  heightClass?: string;
+}
+
+const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
+  label,
+  value,
+  onChange,
+  onError,
+  heightClass = 'h-32'
+}) => {
+  const [processing, setProcessing] = useState(false);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // same file abar select korle jeno trigger hoy
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      onError('Please select an image file');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      onError('Image must be under 10MB');
+      return;
+    }
+    setProcessing(true);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file);
+      onChange(dataUrl);
+    } catch {
+      onError('Could not process image');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div>
+      <label className="block font-semibold text-slate-700 mb-1">{label}</label>
+      <label
+        className={`relative flex flex-col items-center justify-center w-full ${heightClass} border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-slate-50 transition overflow-hidden`}
+      >
+        {value ? (
+          <img src={value} alt="Preview" className="w-full h-full object-cover" />
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-slate-500">
+            <UploadCloud className="w-6 h-6" />
+            <span className="text-xs font-medium">
+              {processing ? 'Processing...' : 'Click to upload image from your device'}
+            </span>
+          </div>
+        )}
+        <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
+      </label>
+      {value && (
+        <div className="flex items-center gap-3 mt-1.5">
+          <span className="text-[11px] text-slate-400">Click image to change</span>
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="text-[11px] text-rose-600 font-semibold cursor-pointer"
+          >
+            Remove image
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const AdminDashboard: React.FC = () => {
   const { user, token, addToast } = useApp();
@@ -339,7 +437,7 @@ export const AdminDashboard: React.FC = () => {
     setCampTarget(300000);
     setCampShortDesc('');
     setCampFullDesc('');
-    setCampImage('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=800&q=80');
+    setCampImage('');
     setCampDeadline('2026-12-31');
     setCampUrgent(false);
     setIsNewCampOpen(true);
@@ -388,6 +486,8 @@ export const AdminDashboard: React.FC = () => {
           setIsNewCampOpen(false);
           fetchCampaigns();
           fetchMetrics();
+        } else {
+          addToast('Failed to update campaign', 'error');
         }
       } else {
         const res = await fetch('/api/campaigns', {
@@ -403,6 +503,8 @@ export const AdminDashboard: React.FC = () => {
           setIsNewCampOpen(false);
           fetchCampaigns();
           fetchMetrics();
+        } else {
+          addToast('Failed to create campaign', 'error');
         }
       }
     } catch {
@@ -599,6 +701,9 @@ export const AdminDashboard: React.FC = () => {
       if (res.ok) {
         addToast('Beneficiary record created!', 'success');
         setIsNewBenOpen(false);
+        setBenName('');
+        setBenStory('');
+        setBenPhoto('');
         fetchBeneficiaries();
       }
     } catch {
@@ -645,6 +750,9 @@ export const AdminDashboard: React.FC = () => {
       if (res.ok) {
         addToast('Blog article published!', 'success');
         setIsNewBlogOpen(false);
+        setBlogTitle('');
+        setBlogContent('');
+        setBlogImage('');
         fetchBlog();
       }
     } catch {
@@ -673,7 +781,11 @@ export const AdminDashboard: React.FC = () => {
   // ==========================================
   const handleCreateGallery = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!galTitle || !galImage) return;
+    if (!galTitle) return;
+    if (!galImage) {
+      addToast('Please upload an image first', 'error');
+      return;
+    }
     try {
       const res = await fetch('/api/gallery', {
         method: 'POST',
@@ -691,6 +803,9 @@ export const AdminDashboard: React.FC = () => {
       if (res.ok) {
         addToast('Photo added to gallery!', 'success');
         setIsNewGalOpen(false);
+        setGalTitle('');
+        setGalImage('');
+        setGalDesc('');
         fetchGallery();
       }
     } catch {
@@ -917,9 +1032,6 @@ export const AdminDashboard: React.FC = () => {
           </button>
         ))}
       </div>
-
-
-
 
       {/* ========================================================= */}
       {/* TAB: OVERVIEW METRICS */}
@@ -1672,16 +1784,12 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Featured Image URL</label>
-                <input
-                  type="url"
-                  value={campImage}
-                  onChange={(e) => setCampImage(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-xl border-slate-300"
-                  placeholder="https://..."
-                />
-              </div>
+              <ImageUploadField
+                label="Featured Image"
+                value={campImage}
+                onChange={setCampImage}
+                onError={(m) => addToast(m, 'error')}
+              />
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Full Description *</label>
@@ -1904,6 +2012,13 @@ export const AdminDashboard: React.FC = () => {
                 </select>
               </div>
 
+              <ImageUploadField
+                label="Beneficiary Photo"
+                value={benPhoto}
+                onChange={setBenPhoto}
+                onError={(m) => addToast(m, 'error')}
+              />
+
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Story & Assistance Summary *</label>
                 <textarea
@@ -1964,6 +2079,13 @@ export const AdminDashboard: React.FC = () => {
                 />
               </div>
 
+              <ImageUploadField
+                label="Cover Image"
+                value={blogImage}
+                onChange={setBlogImage}
+                onError={(m) => addToast(m, 'error')}
+              />
+
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Content *</label>
                 <textarea
@@ -2014,17 +2136,13 @@ export const AdminDashboard: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Image URL *</label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://images.unsplash.com/..."
-                  value={galImage}
-                  onChange={(e) => setGalImage(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-xl border-slate-300"
-                />
-              </div>
+              <ImageUploadField
+                label="Photo *"
+                value={galImage}
+                onChange={setGalImage}
+                onError={(m) => addToast(m, 'error')}
+                heightClass="h-40"
+              />
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Category</label>
