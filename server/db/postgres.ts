@@ -32,11 +32,33 @@ export class PostgresService {
   public connectionError: string | null = null;
   public connectionString: string | null = null;
 
+  // [NEW] ekai shomoye duibar connect() cholle pool.end() race hoto — er jonno
+  private connecting: Promise<{ success: boolean; message: string }> | null = null;
+
   constructor() {
     this.connect();
   }
 
-  public async connect(customUrl?: string): Promise<{ success: boolean; message: string }> {
+  // [CHANGED] connect() ekhon wrapper: already connected thakle ba connect cholte thakle notun kore pool bondho kore na
+  public connect(customUrl?: string): Promise<{ success: boolean; message: string }> {
+    if (!customUrl && this.isConnected && this.pool) {
+      return Promise.resolve({ success: true, message: 'Already connected to Neon PostgreSQL' });
+    }
+    if (!customUrl && this.connecting) {
+      return this.connecting;
+    }
+    const run = this.doConnect(customUrl);
+    if (!customUrl) {
+      this.connecting = run;
+      run.finally(() => {
+        this.connecting = null;
+      });
+    }
+    return run;
+  }
+
+  // [CHANGED] ager connect()-er hubohu body, nam shudhu doConnect
+  private async doConnect(customUrl?: string): Promise<{ success: boolean; message: string }> {
     const connStr = customUrl || getDatabaseUrl();
     this.connectionString = connStr || null;
 
@@ -289,12 +311,37 @@ CREATE TABLE IF NOT EXISTS gallery_items (
   location VARCHAR(150),
   description TEXT
 );
+
+-- 10. Contact Messages Table
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id VARCHAR(100) PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 11. Audit Logs Table
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id VARCHAR(100) PRIMARY KEY,
+  admin_id VARCHAR(100),
+  admin_name VARCHAR(150),
+  action VARCHAR(100) NOT NULL,
+  entity VARCHAR(100),
+  details TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
 `;
   }
 
   public async getTableCounts(): Promise<Record<string, number>> {
     if (!this.pool || !this.isConnected) return {};
-    const tables = ['users', 'campaigns', 'donations', 'blood_donors', 'blood_requests', 'volunteers', 'beneficiaries', 'blog_posts', 'gallery_items'];
+    // [CHANGED] contact_messages ar audit_logs add hoyeche
+    const tables = [
+      'users', 'campaigns', 'donations', 'blood_donors', 'blood_requests',
+      'volunteers', 'beneficiaries', 'blog_posts', 'gallery_items',
+      'contact_messages', 'audit_logs'
+    ];
     const counts: Record<string, number> = {};
 
     for (const table of tables) {
@@ -332,4 +379,3 @@ CREATE TABLE IF NOT EXISTS gallery_items (
 }
 
 export const postgresService = new PostgresService();
-
